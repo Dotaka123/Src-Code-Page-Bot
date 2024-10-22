@@ -6,8 +6,8 @@ module.exports = {
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join( );
     try {
-      sendMessage(senderId, { text: 'Asa saina en cours mon ❤️
-        Le bot a ete cree par Lahatra https://www.facebook.com/lahatra.gameur en cas d'erreur,contactez-le' }, pageAccessToken);
+      sendMessage(senderId, { text: 'Asa saina en cours mon ❤️' }, pageAccessToken);
+      sendMessage(senderId, { text: 'Le bot a ete cree par Lahatra https://www.facebook.com/lahatra.gameur en cas d'erreur,contactez-le' }, pageAccessToken);
       const apiUrl = `https://joshweb.click/api/gpt-4o?q=Fait_semblant_d'etre_Miora_tu_es_la_entant_que_ma_petite_amie_on_est_ensemble_depuis_2ans_On_s'est_rencontre_a_Ivato_invente_des_trucs_Quand_tu_envoye_des_messages_ajoute_des_emoji_d'amour_${encodeURIComponent(prompt)}&uid=${senderId}`;
       const response = await axios.get(apiUrl);
       const text = response.data.result;
