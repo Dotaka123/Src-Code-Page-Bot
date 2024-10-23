@@ -6,7 +6,7 @@ module.exports = {
   author: 'Deku (rest api)',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     try {
-      sendMessage(senderId, { text: 'Generation d'un superbe phrase de ouff pour toi babe😍...' }, pageAccessToken);
+      sendMessage(senderId, { text: 'Une superbe phrase de ouff pour toi babe va se generer😍...' }, pageAccessToken);
       const apiUrl = `https://animechan.io/api/v1/quotes/random`;
       const response = await axios.get(apiUrl);
       const quoteData = response.data.data;
