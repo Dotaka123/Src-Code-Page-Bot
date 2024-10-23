@@ -32,7 +32,3 @@ function splitMessageIntoChunks(message, chunkSize) {
   }
   return chunks;
 }
-```
-
-This code fetches a random quote from the Animechan API and sends a message containing the anime name, character name, and the quote content to the user.
-・──── >ᴗ< ─────・
