@@ -1,12 +1,13 @@
 const axios = require('axios');
 
 module.exports = {
-  name: 'Babe lyrics',
+  name: 'Lyrics',
   description: 'Fetch song lyrics',
   author: 'Deku (rest api)',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const query = args.join(' ');
     try {
+      sendMessage(senderId, { text: 'Recherche de votre chanson...' }, pageAccessToken);
       const apiUrl = `https://joshweb.click/search/lyrics?q=${encodeURIComponent(query)}`;
       const response = await axios.get(apiUrl);
       const result = response.data.result;
