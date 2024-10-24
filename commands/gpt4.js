@@ -3,7 +3,6 @@ module.exports = {
   name: 'Babe',
   description: 'Ask a question to Miora',
   author: 'Deku (rest api)',
-  usage:'Babe [your question]',
   async execute(senderId, args, pageAccessToken, sendMessage) {
     const prompt = args.join( );
     try {
