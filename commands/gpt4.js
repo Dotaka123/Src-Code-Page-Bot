@@ -6,7 +6,7 @@ const fs = require('fs');
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
-  name: 'Babe',
+  name: 'gpt4',
   description: 'Generate an AI-based response or image',
   author: 'Kenneth Panio',
   
