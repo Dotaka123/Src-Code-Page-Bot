@@ -26,13 +26,25 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
     }
 
     if (attachment) {
-      messagePayload.message.attachment = {
-        type: attachment.type,
-        payload: {
-          url: attachment.payload.url,
-          is_reusable: true
-        }
-      };
+      if (attachment.type === 'template') {
+        // Add the required structure for template messages
+        messagePayload.message.attachment = {
+          type: 'template',
+          payload: {
+            template_type: attachment.payload.template_type, // Ensure template_type is included here
+            elements: attachment.payload.elements || []
+          }
+        };
+      } else {
+        // Handle non-template attachments (like images or audio)
+        messagePayload.message.attachment = {
+          type: attachment.type,
+          payload: {
+            url: attachment.payload.url,
+            is_reusable: true
+          }
+        };
+      }
     }
 
     // Send the message
