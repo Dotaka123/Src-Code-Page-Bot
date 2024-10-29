@@ -9,6 +9,8 @@ module.exports = {
   name: 'video',
   description: 'Search for YouTube videos and provide an option to download audio',
   author: 'Kenneth Panio',
+  usage:'video [nom de la video]',
+
   
   async execute(senderId, args) {
     const pageAccessToken = token;
