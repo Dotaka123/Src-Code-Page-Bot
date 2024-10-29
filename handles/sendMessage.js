@@ -23,17 +23,17 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
 
     // Check if attachment is present; prioritize it over text
     if (attachment) {
-      if (attachment.type === 'template') {
-        // Template structure for button and generic templates
+      if (attachment.type === 'template' && attachment.payload.template_type) {
+        // Correct structure for template messages (e.g., button, generic templates)
         messagePayload.message.attachment = {
           type: 'template',
           payload: {
             template_type: attachment.payload.template_type,
-            elements: attachment.payload.elements || []
+            elements: attachment.payload.elements
           }
         };
-      } else {
-        // Other attachment types (like audio)
+      } else if (attachment.type !== 'template') {
+        // Handle non-template attachments (like images or audio)
         messagePayload.message.attachment = {
           type: attachment.type,
           payload: {
