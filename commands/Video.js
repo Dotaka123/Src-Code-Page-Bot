@@ -50,7 +50,7 @@ module.exports = {
         attachment: {
           type: 'template',
           payload: {
-            template_type: 'generic',
+            template_type: 'generic',  // Ajout du template_type ici
             elements: elements
           }
         }
@@ -88,7 +88,7 @@ module.exports = {
           attachment: {
             type: 'template',
             payload: {
-              template_type: 'generic',
+              template_type: 'generic',  // Ajout du template_type ici
               elements: [{
                 title: audioData.info.title,
                 image_url: audioData.info.thumbnail,
