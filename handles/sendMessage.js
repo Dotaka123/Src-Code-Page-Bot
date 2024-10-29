@@ -21,18 +21,21 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
       message: {}
     };
 
-    // Check if attachment is present; prioritize it over text
+    if (text) {
+      messagePayload.message.text = text;
+    }
+
     if (attachment) {
-      if (attachment.type === 'template' && attachment.payload.template_type) {
-        // Correct structure for template messages (e.g., button, generic templates)
+      if (attachment.type === 'template') {
+        // Add the required structure for template messages
         messagePayload.message.attachment = {
           type: 'template',
           payload: {
-            template_type: attachment.payload.template_type,
-            elements: attachment.payload.elements
+            template_type: attachment.payload.template_type, // Ensure template_type is included here
+            elements: attachment.payload.elements || []
           }
         };
-      } else if (attachment.type !== 'template') {
+      } else {
         // Handle non-template attachments (like images or audio)
         messagePayload.message.attachment = {
           type: attachment.type,
@@ -42,9 +45,6 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
           }
         };
       }
-    } else if (text) {
-      // If no attachment, include text message
-      messagePayload.message.text = text;
     }
 
     // Send the message
