@@ -5,9 +5,6 @@ const fs = require('fs');
 // Lecture du token d'accès pour l'envoi des messages
 const token = fs.readFileSync('token.txt', 'utf8');
 
-// Dictionnaire pour suivre le dernier horodatage de chaque utilisateur
-const lastUsage = {};
-
 module.exports = {
   name: 'gpt4',
   description: 'Generate an AI-based response or image',
@@ -15,10 +12,10 @@ module.exports = {
   
   async execute(senderId, args, event) {
     const pageAccessToken = token;
-
+    
     // Vérifie si un fichier ou une image a été envoyé
-    if (event.type === 'message_reply' && event.messageReply.attachments[0]) {
-      const fileUrl = event.messageReply.attachments[0].url;
+    if (event.type === 'message_reply' && event.messageReply.attachments.length > 0) {
+      const fileUrl = event.messageReply.attachments[0].url; // Assurez-vous que cette URL est correcte
       const uid = senderId;
       const prompt = 'Analyse cette image';
 
@@ -39,7 +36,7 @@ module.exports = {
       return; // Sortir si un fichier a été traité
     }
 
-    // Sinon, traiter comme une demande d'image
+    // Traitement des demandes de texte
     const prompt = args.join(' ').trim();
     const uid = senderId;
 
