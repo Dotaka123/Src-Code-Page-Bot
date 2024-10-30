@@ -4,6 +4,9 @@ const fs = require('fs');
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
+// Create a simple in-memory store to keep track of searches
+const userSearchResults = {};
+
 module.exports = {
   name: 'video',
   description: 'Search for YouTube videos based on user input',
@@ -26,11 +29,12 @@ module.exports = {
       if (data.code === 200 && data.data.length > 0) {
         // Create a numbered list of video results
         const videoList = data.data.map((video, index) => `${index + 1}. ${video.title}`).join('\n');
-        const message = `Here are some videos I found:\n${videoList}\n\nPlease reply with the number of the video you want to watch.`;
+        const message = `Here are some videos I found:\n${videoList}\n\nPlease reply with "select" followed by the number of the video you want to watch.`;
 
         await sendMessage(senderId, { text: message }, pageAccessToken);
+
         // Store video data in memory for later use
-        this.videoData = data.data; // Store video data for handling user response
+        userSearchResults[senderId] = data.data; // Store video data associated with the senderId
       } else {
         await sendMessage(senderId, { text: 'No videos found for your search.' }, pageAccessToken);
       }
@@ -44,17 +48,27 @@ module.exports = {
     console.log("User response received:", userResponse); // Log the user response
 
     try {
-      const videoIndex = parseInt(userResponse, 10) - 1; // Convert response to index
-      if (this.videoData && this.videoData[videoIndex]) {
-        const videoId = this.videoData[videoIndex].videoId;
-        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      // Check if the user response starts with "select"
+      if (userResponse.toLowerCase().startsWith('select ')) {
+        const numberPart = userResponse.slice(7).trim(); // Extract the number part after "select"
+        const videoIndex = parseInt(numberPart, 10) - 1; // Convert response to index
+        
+        if (userSearchResults[senderId] && userSearchResults[senderId][videoIndex]) {
+          const videoId = userSearchResults[senderId][videoIndex].videoId;
+          const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-        // Send the video URL directly
-        await sendMessage(senderId, {
-          text: `Here is the video you requested: ${videoUrl}`, // Use text instead of attachment
-        }, token);
+          // Send the video URL directly
+          await sendMessage(senderId, {
+            text: `Here is the video you requested: ${videoUrl}`, // Use text instead of attachment
+          }, token);
+
+          // Optionally, you can delete the user's search results after sending the link
+          delete userSearchResults[senderId]; // Clean up after use
+        } else {
+          await sendMessage(senderId, { text: 'Invalid number. Please try again.' }, token);
+        }
       } else {
-        await sendMessage(senderId, { text: 'Invalid number. Please try again.' }, token);
+        await sendMessage(senderId, { text: 'Please reply with "select" followed by the number of the video you want to watch.' }, token);
       }
     } catch (error) {
       console.error('Error handling user response:', error);
