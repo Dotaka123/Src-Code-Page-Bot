@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const chokidar = require('chokidar');
 const { handleMessage } = require('./handles/handleMessage');
 const { handlePostback } = require('./handles/handlePostback');
 
@@ -94,9 +95,16 @@ const loadMenuCommands = async (isReload = false) => {
   console.log('Menu commands loaded successfully.');
 };
 
-// Watch for changes in the commands directory and reload the commands
-fs.watch(COMMANDS_PATH, (eventType, filename) => {
-  if (['change', 'rename'].includes(eventType) && filename.endsWith('.js')) {
+// Watch for changes in the commands directory using chokidar
+const watcher = chokidar.watch(COMMANDS_PATH, {
+  persistent: true,
+  usePolling: true,
+  interval: 10000,
+  depth: 0,
+});
+
+watcher.on('all', (event, filePath) => {
+  if (['add', 'change', 'unlink'].includes(event) && filePath.endsWith('.js')) {
     loadMenuCommands(true).catch(error => {
       console.error('Error reloading menu commands:', error);
     });
