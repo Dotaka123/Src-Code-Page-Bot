@@ -24,17 +24,13 @@ module.exports = {
       const data = response.data;
 
       if (data.code === 200 && data.data.length > 0) {
-        // Prepare buttons for each video result
-        const quickReplies = {
-          text: 'Here are some videos I found:',
-          quick_replies: data.data.map(video => ({
-            content_type: 'text',
-            title: `Watch: ${video.title}`,
-            payload: JSON.stringify({ videoId: video.videoId }), // Use JSON.stringify to encapsulate videoId
-          })),
-        };
+        // Create a numbered list of video results
+        const videoList = data.data.map((video, index) => `${index + 1}. ${video.title}`).join('\n');
+        const message = `Here are some videos I found:\n${videoList}\n\nPlease reply with the number of the video you want to watch.`;
 
-        await sendMessage(senderId, quickReplies, pageAccessToken);
+        await sendMessage(senderId, { text: message }, pageAccessToken);
+        // Store video data in memory for later use
+        this.videoData = data.data; // Store video data for handling user response
       } else {
         await sendMessage(senderId, { text: 'No videos found for your search.' }, pageAccessToken);
       }
@@ -44,19 +40,24 @@ module.exports = {
     }
   },
 
-  async handleButtonClick(senderId, payload) {
-    console.log("Button click payload received:", payload); // Log the payload
+  async handleUserResponse(senderId, userResponse) {
+    console.log("User response received:", userResponse); // Log the user response
 
     try {
-      const { videoId } = JSON.parse(payload); // Parse the payload to extract videoId
-      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+      const videoIndex = parseInt(userResponse, 10) - 1; // Convert response to index
+      if (this.videoData && this.videoData[videoIndex]) {
+        const videoId = this.videoData[videoIndex].videoId;
+        const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
-      // Send the video URL directly
-      await sendMessage(senderId, {
-        text: `Here is the video you requested: ${videoUrl}`, // Use text instead of attachment
-      }, token);
+        // Send the video URL directly
+        await sendMessage(senderId, {
+          text: `Here is the video you requested: ${videoUrl}`, // Use text instead of attachment
+        }, token);
+      } else {
+        await sendMessage(senderId, { text: 'Invalid number. Please try again.' }, token);
+      }
     } catch (error) {
-      console.error('Error handling button click:', error);
+      console.error('Error handling user response:', error);
       await sendMessage(senderId, { text: 'Error: Unable to retrieve the video.' }, token);
     }
   }
