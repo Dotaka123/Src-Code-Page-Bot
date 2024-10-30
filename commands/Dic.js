@@ -1,36 +1,60 @@
 const axios = require('axios');
 const { sendMessage } = require('../handles/sendMessage');
+const fs = require('fs');
+
+const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'dic',
-  description: 'Gives the definition of a word',
-  usage:'dic [ton mot]',
+  description: 'Fetch definitions of a word with audio pronunciation',
+  author: 'tata',
 
   async execute(senderId, args) {
-    const word = args.join(' ').trim();  // Le mot entré par l'utilisateur
-    const apiUrl = `https://ccprojectapis.ddns.net/api/dictio?q=${encodeURIComponent(word)}`;
+    const pageAccessToken = token;
+    const word = args.join(' ').trim();
+
+    if (!word) {
+      await sendMessage(senderId, { text: 'Please provide a word to define.' }, pageAccessToken);
+      return;
+    }
 
     try {
-      const response = await axios.get(apiUrl);
+      const response = await axios.get(`https://ccprojectapis.ddns.net/api/dictio?q=${encodeURIComponent(word)}`);
       const data = response.data;
 
-      if (data.status && data.meanings.length > 0) {
-        // Formatage de la réponse à partir des données reçues
-        const definition = data.meanings[0].definitions[0].definition; // Première définition
-        const phonetic = data.phonetic;
-        const audioUrl = data.phonetics[0]?.audio || '';
-
-        const message = `Définition de "${word}":\nPhonétique: ${phonetic}\nAudio: ${audioUrl}\n\nDéfinition: ${definition}`;
-
-        // Envoi du message formaté à l'utilisateur
-        await sendMessage(senderId, { text: message });
-      } else {
-        // Message si le mot n'est pas trouvé
-        await sendMessage(senderId, { text: `Aucune définition trouvée pour "${word}".` });
+      if (!data || !data.status) {
+        await sendMessage(senderId, { text: `No definition found for "${word}".` }, pageAccessToken);
+        return;
       }
+
+      // Constructing the dictionary message
+      let formattedMessage = `・────📚 Dictionary ────・\n`;
+      formattedMessage += `Word: ${data.word}\nPhonetic: ${data.phonetic || 'N/A'}\n\n`;
+
+      data.meanings.forEach((meaning, index) => {
+        formattedMessage += `(${index + 1}) Part of Speech: ${meaning.partOfSpeech}\n`;
+        meaning.definitions.forEach((def, idx) => {
+          formattedMessage += ` - ${def.definition}\n`;
+          if (def.example) {
+            formattedMessage += `   Example: "${def.example}"\n`;
+          }
+        });
+        formattedMessage += '\n';
+      });
+
+      formattedMessage += `・─────────────・`;
+
+      // Send the formatted dictionary response
+      await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
+
+      // Check if there is an audio URL and send it as a separate message
+      if (data.audio) {
+        await sendMessage(senderId, { attachment: { type: 'audio', payload: { url: data.audio } } }, pageAccessToken);
+      }
+
     } catch (error) {
       console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Erreur : Impossible de récupérer la définition.' });
+      await sendMessage(senderId, { text: 'Error: Unable to fetch the definition. Please try again later.' }, pageAccessToken);
     }
   }
 };
