@@ -7,7 +7,7 @@ const token = fs.readFileSync('token.txt', 'utf8');
 module.exports = {
   name: 'video',
   description: 'Search for YouTube videos based on user input',
-  author: 'Coffee',
+  author: 'tata',
 
   async execute(senderId, args) {
     const pageAccessToken = token;
@@ -25,17 +25,12 @@ module.exports = {
 
       if (data.code === 200 && data.data.length > 0) {
         // Prepare buttons for each video result
-        const buttons = data.data.map(video => ({
-          title: `Watch: ${video.title}`,
-          videoId: video.videoId, // Store the videoId for sending the video directly
-        }));
-
         const quickReplies = {
           text: 'Here are some videos I found:',
-          quick_replies: buttons.map(button => ({
+          quick_replies: data.data.map(video => ({
             content_type: 'text',
-            title: button.title,
-            payload: button.videoId, // Use videoId as the payload
+            title: `Watch: ${video.title}`,
+            payload: JSON.stringify({ videoId: video.videoId }), // Use JSON.stringify to encapsulate videoId
           })),
         };
 
@@ -49,11 +44,11 @@ module.exports = {
     }
   },
 
-  async handleButtonClick(senderId, videoId) {
-    // Handle the button click to send the actual video
+  async handleButtonClick(senderId, payload) {
+    const { videoId } = JSON.parse(payload); // Parse the payload to extract videoId
     const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
-    
-    // Here, we'll need to send the video URL directly
+
+    // Send the video URL directly
     await sendMessage(senderId, {
       attachment: {
         type: 'video',
