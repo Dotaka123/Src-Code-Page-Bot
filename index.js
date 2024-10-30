@@ -2,6 +2,7 @@ const express = require('express');
 const fs = require('fs');
 const path = require('path');
 const axios = require('axios');
+const chokidar = require('chokidar');
 const { handleMessage } = require('./handles/handleMessage');
 const { handlePostback } = require('./handles/handlePostback');
 
@@ -32,7 +33,6 @@ app.post('/webhook', (req, res) => {
   const { body } = req;
 
   if (body.object === 'page') {
-    // Ensure entry and messaging exist before iterating
     body.entry?.forEach(entry => {
       entry.messaging?.forEach(event => {
         if (event.message) {
@@ -66,27 +66,23 @@ const sendMessengerProfileRequest = async (method, url, data = null) => {
 };
 
 // Load all command files from the "commands" directory
-const loadCommands = () => {
-  return fs.readdirSync(COMMANDS_PATH)
-    .filter(file => file.endsWith('.js'))
-    .map(file => {
-      const command = require(path.join(COMMANDS_PATH, file));
-      return command.name && command.description ? { name: command.name, description: command.description } : null;
-    })
-    .filter(Boolean);
+const loadCommands = async () => {
+  const files = await fs.promises.readdir(COMMANDS_PATH);
+  return files.filter(file => file.endsWith('.js')).map(file => {
+    const command = require(path.join(COMMANDS_PATH, file));
+    return command.name && command.description ? { name: command.name, description: command.description } : null;
+  }).filter(Boolean);
 };
 
 // Load or reload Messenger Menu Commands dynamically
 const loadMenuCommands = async (isReload = false) => {
-  const commands = loadCommands();
+  const commands = await loadCommands();
 
   if (isReload) {
-    // Delete existing commands if reloading
     await sendMessengerProfileRequest('delete', '/me/messenger_profile', { fields: ['commands'] });
     console.log('Menu commands deleted successfully.');
   }
 
-  // Load new or updated commands
   await sendMessengerProfileRequest('post', '/me/messenger_profile', {
     commands: [{ locale: 'default', commands }],
   });
@@ -95,11 +91,20 @@ const loadMenuCommands = async (isReload = false) => {
 };
 
 // Watch for changes in the commands directory and reload the commands
-fs.watch(COMMANDS_PATH, (eventType, filename) => {
-  if (['change', 'rename'].includes(eventType) && filename.endsWith('.js')) {
-    loadMenuCommands(true).catch(error => {
+const watcher = chokidar.watch(COMMANDS_PATH, {
+  persistent: true,
+  ignoreInitial: true,
+  usePolling: true,
+  interval: 100,
+});
+
+watcher.on('all', async (eventType, filepath) => {
+  if (['change', 'add', 'unlink'].includes(eventType) && filepath.endsWith('.js')) {
+    try {
+      await loadMenuCommands(true);
+    } catch (error) {
       console.error('Error reloading menu commands:', error);
-    });
+    }
   }
 });
 
@@ -107,7 +112,6 @@ fs.watch(COMMANDS_PATH, (eventType, filename) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, async () => {
   console.log(`Server is running on port ${PORT}`);
-  // Load Messenger Menu Commands asynchronously after the server starts
   try {
     await loadMenuCommands(); // Load commands without deleting (initial load)
   } catch (error) {
