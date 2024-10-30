@@ -2,7 +2,8 @@ const axios = require('axios');
 const path = require('path');
 
 // Helper function for POST requests
-const axiosPost = (url, data, params = {}) => axios.post(url, data, { params }).then(res => res.data);
+const axiosPost = (url, data, params = {}) => 
+  axios.post(url, data, { params }).then(res => res.data);
 
 // Send a message with typing indicators
 const sendMessage = async (senderId, { text = '', attachment = null }, pageAccessToken) => {
@@ -31,12 +32,12 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
         messagePayload.message.attachment = {
           type: 'template',
           payload: {
-            template_type: attachment.payload.template_type, // Ensure template_type is included here
+            template_type: attachment.payload.template_type,
             elements: attachment.payload.elements || []
           }
         };
       } else {
-        // Handle non-template attachments (like images or audio)
+        // Handle non-template attachments (like images, audio, or videos)
         messagePayload.message.attachment = {
           type: attachment.type,
           payload: {
