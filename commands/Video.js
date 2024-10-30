@@ -4,66 +4,64 @@ const fs = require('fs');
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
-// Stock temporaire pour suivre les recherches vidéo par utilisateur
-const userSearchResults = {};
-
 module.exports = {
   name: 'video',
-  description: 'Search for YouTube videos and send a list for the user to select',
-  author: 'Tata',
-  
+  description: 'Search for YouTube videos based on user input',
+  author: 'Coffee',
 
   async execute(senderId, args) {
     const pageAccessToken = token;
-    const searchQuery = args.join(' ').trim();
+    const query = args.join(' '); // Get user input as search query
+
+    if (!query) {
+      await sendMessage(senderId, { text: 'Please provide a search query.' }, pageAccessToken);
+      return;
+    }
 
     try {
-      // Requête de recherche des vidéos
-      const searchResponse = await axios.get(
-        `https://me0xn4hy3i.execute-api.us-east-1.amazonaws.com/staging/api/resolve/resolveYoutubeSearch?search=${encodeURIComponent(searchQuery)}`
-      );
-      const searchData = searchResponse.data;
+      // Search for videos using the provided API
+      const response = await axios.get(`https://me0xn4hy3i.execute-api.us-east-1.amazonaws.com/staging/api/resolve/resolveYoutubeSearch?search=${encodeURIComponent(query)}`);
+      const data = response.data;
 
-      if (searchData.code === 200 && searchData.data.length > 0) {
-        // Stocker les résultats de recherche pour cet utilisateur
-        userSearchResults[senderId] = searchData.data;
+      if (data.code === 200 && data.data.length > 0) {
+        // Prepare buttons for each video result
+        const buttons = data.data.map(video => ({
+          title: `Watch: ${video.title}`,
+          videoId: video.videoId, // Store the videoId for sending the video directly
+        }));
 
-        // Créer un message avec la liste des vidéos
-        const messageText = searchData.data.slice(0, 5).map((video, index) => (
-          `${index + 1}. ${video.title} (${video.duration})`
-        )).join('\n');
+        const quickReplies = {
+          text: 'Here are some videos I found:',
+          quick_replies: buttons.map(button => ({
+            content_type: 'text',
+            title: button.title,
+            payload: button.videoId, // Use videoId as the payload
+          })),
+        };
 
-        await sendMessage(senderId, { text: `🔎 Voici les résultats de recherche pour "${searchQuery}":\n\n${messageText}\n\nEnvoyez le numéro de la vidéo souhaitée.` }, pageAccessToken);
+        await sendMessage(senderId, quickReplies, pageAccessToken);
       } else {
-        await sendMessage(senderId, { text: "Je n'ai trouvé aucune vidéo correspondant à votre recherche." }, pageAccessToken);
+        await sendMessage(senderId, { text: 'No videos found for your search.' }, pageAccessToken);
       }
     } catch (error) {
       console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Une erreur est survenue lors de la recherche de la vidéo.' }, pageAccessToken);
+      await sendMessage(senderId, { text: 'Error: Unexpected error occurred while searching for videos.' }, pageAccessToken);
     }
+  },
+
+  async handleButtonClick(senderId, videoId) {
+    // Handle the button click to send the actual video
+    const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    
+    // Here, we'll need to send the video URL directly
+    await sendMessage(senderId, {
+      attachment: {
+        type: 'video',
+        payload: {
+          url: videoUrl, // Send the video URL directly
+          is_reusable: true,
+        },
+      },
+    }, token);
   }
 };
-
-// Fonction pour gérer la réponse de l'utilisateur avec un numéro
-const handleUserResponse = async (senderId, userMessage, pageAccessToken) => {
-  if (userSearchResults[senderId]) {
-    const selectedIndex = parseInt(userMessage, 10) - 1;
-
-    // Vérification que le numéro est valide
-    if (!isNaN(selectedIndex) && selectedIndex >= 0 && selectedIndex < userSearchResults[senderId].length) {
-      const selectedVideo = userSearchResults[senderId][selectedIndex];
-      const videoUrl = selectedVideo.url;
-
-      await sendMessage(senderId, { text: `Voici le lien de la vidéo : ${videoUrl}` }, pageAccessToken);
-
-      // Supprimer les résultats stockés pour cet utilisateur après l'envoi du lien
-      delete userSearchResults[senderId];
-    } else {
-      await sendMessage(senderId, { text: "Numéro invalide. Veuillez envoyer un numéro correspondant à l'une des vidéos de la liste." }, pageAccessToken);
-    }
-  } else {
-    await sendMessage(senderId, { text: "Aucune recherche en cours. Veuillez d'abord effectuer une recherche de vidéo." }, pageAccessToken);
-  }
-};
-
-module.exports.handleUserResponse = handleUserResponse;
