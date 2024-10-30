@@ -6,7 +6,7 @@ const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'chatgpt',
-  description: 'Discuter avec chatgpt le modele gpt3 d'/OpenAi',
+  description: 'Discuter avec chatgpt le modele gpt3 d"OpenAi',
   author: 'Tata',
   usage:'chatgpt [ta question]',
 
