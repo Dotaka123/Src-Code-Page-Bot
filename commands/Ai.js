@@ -56,7 +56,7 @@ module.exports = {
     name: "ai",
     version: "1.0",
     author: "Samir OE",
-    usage:'ai [you're question]',
+    usage:'ai [ta question]',
     countDown: 5,
     role: 0,
     category: "ai"
