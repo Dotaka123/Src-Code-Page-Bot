@@ -19,7 +19,7 @@ module.exports = {
       sendMessage(senderId, { text: '...✍🏻' }, pageAccessToken);
       const response = await axios.get(`https://www.geo-sevent-tooldph.site/api/blackbox?prompt=${encodeURIComponent(modifiedPrompt)}`);
       const data = response.data;
-      const formattedMessage = `・──🤖blackbox🤖──・\n${data.message.content}\n・──── >ᴗ< ────・`;
+      const formattedMessage = `・──🤖blackbox🤖──・\n${data.response}\n・──── >ᴗ< ────・`;
 
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
     } catch (error) {
