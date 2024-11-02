@@ -11,8 +11,9 @@ module.exports = {
     if (!prompt) return sendMessage(senderId, { text: "Usage: gemini <your message>" }, pageAccessToken);
 
     try {
+      sendMessage(senderId, {text: '...✍🏻'},pageAccessToken);
       const { data } = await axios.get(`https://rest-api-production-5054.up.railway.app/google?prompt=${encodeURIComponent(prompt)}&model=gemini-1.5-flash&uid=${senderId}`);
-      sendMessage(senderId, { text: data.gemini }, pageAccessToken);
+      sendMessage(senderId, { text: data.message }, pageAccessToken);
     } catch {
       sendMessage(senderId, { text: 'Error generating response. Try again later.' }, pageAccessToken);
     }
