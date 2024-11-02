@@ -8,7 +8,8 @@ const token = fs.readFileSync('token.txt', 'utf8');
 module.exports = {
   name: 'gpt4',
   description: 'Generate an AI-based response or image',
-  author: 'Kenneth Panio',
+  author: 'Tata',
+  usage:'gpt4 [your question]',
   
   async execute(senderId, args) {
     const pageAccessToken = token;
@@ -35,7 +36,7 @@ module.exports = {
       }
 
       // Envoie le message texte dans un message séparé
-      const formattedText = `・────Miora💕────・\n${data.message}\n・──── >ᴗ< ────・`;
+      const formattedText = `・────Miora💕────・\n${data.response}\n・──── >ᴗ< ────・`;
       await sendMessage(senderId, { text: formattedText }, pageAccessToken);
 
     } catch (error) {
