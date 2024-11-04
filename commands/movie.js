@@ -20,7 +20,7 @@ module.exports = {
     const apiUrl = `https://api.popcat.xyz/imdb?q=${encodeURIComponent(query)}`;
 
     try {
-      await sendMessage(senderId,{text:'🕵🏻...',pageAccessToken}
+      await sendMessage(senderId,{text:'🕵🏻...'},pageAccessToken);
       const response = await axios.get(apiUrl);
       const movie = response.data;
 
