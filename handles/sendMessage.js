@@ -17,17 +17,17 @@ const createMessagePayload = (senderId, text, attachment) => {
     message: {},
   };
 
-  // Si le texte est fourni, il est prioritaire
   if (text && !attachment) {
     messagePayload.message.text = text;
   } else if (attachment) {
-    // Ajoute l'attachment s'il n'y a pas de texte
-    if (attachment.type === 'template') {
+    if (attachment.type === 'template' && attachment.payload.template_type === 'button') {
+      // Button template without elements key
       messagePayload.message.attachment = {
         type: 'template',
         payload: {
-          template_type: attachment.payload.template_type,
-          elements: attachment.payload.elements || [],
+          template_type: 'button',
+          text: attachment.payload.text,
+          buttons: attachment.payload.buttons || []
         },
       };
     } else {
@@ -49,10 +49,7 @@ const handlePostback = async (senderId, payload, pageAccessToken) => {
   const params = { access_token: pageAccessToken };
 
   if (payload === 'GET_STARTED') {
-    // Create welcome message payload
     const messagePayload = createMessagePayload(senderId, WELCOME_MESSAGE, null);
-    
-    // Send the welcome message
     try {
       await axiosPost(MESSAGE_URL, messagePayload, params);
     } catch (e) {
@@ -68,22 +65,13 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
   const params = { access_token: pageAccessToken };
 
   try {
-    // Turn on typing indicator
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_ON }, params);
-
-    // Create message payload
     const messagePayload = createMessagePayload(senderId, text, attachment);
-
-    // Send the message
     await axiosPost(MESSAGE_URL, messagePayload, params);
-
-    // Turn off typing indicator
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_OFF }, params);
   } catch (e) {
     const errorMessage = e.response?.data?.error?.message || e.message;
     console.error(`Error in ${path.basename(__filename)}: ${errorMessage}`);
-
-    // Optional: Send an error message back to the user
     await axiosPost(MESSAGE_URL, {
       recipient: { id: senderId },
       message: { text: 'An error occurred while sending your message. Please try again.' },
