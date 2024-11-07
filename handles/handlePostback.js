@@ -1,4 +1,5 @@
 const { sendMessage } = require('./sendMessage');
+const axios = require('axios');
 
 const handlePostback = async (event, pageAccessToken) => {
   const { id: senderId } = event.sender || {};
@@ -27,10 +28,31 @@ const handlePostback = async (event, pageAccessToken) => {
       Type "help" to see all my features.
       `;
 
-      // Send the welcome message
       await sendMessage(senderId, { text: welcomeMessage.trim() }, pageAccessToken);
-    } else {
-      // For other postback payloads, send a default response
+    } 
+    // Check if the payload is for listening to audio
+    else if (payload.startsWith('LISTEN_AUDIO_')) {
+      const videoId = payload.split('_')[2];
+      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=180`;
+
+      try {
+        const downloadResponse = await axios.get(downloadUrl);
+        const audioUrl = downloadResponse.data.audio;
+
+        // Send the audio file to the user
+        await sendMessage(senderId, {
+          attachment: {
+            type: "audio",
+            payload: { url: audioUrl }
+          }
+        }, pageAccessToken);
+      } catch (error) {
+        console.error('Erreur lors du téléchargement de l\'audio:', error);
+        await sendMessage(senderId, { text: "Erreur lors du téléchargement de l'audio." }, pageAccessToken);
+      }
+    } 
+    // For other postback payloads, send a default response
+    else {
       await sendMessage(senderId, { text: `Vous avez envoyé un postback avec le payload : ${payload}` }, pageAccessToken);
     }
   } catch (err) {
