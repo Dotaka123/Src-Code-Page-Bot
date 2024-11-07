@@ -10,7 +10,7 @@ const handlePostback = async (event, pageAccessToken) => {
 
   try {
     // Check if the payload is 'GET_STARTED' to send a welcome message
-    if (payload === 'GET_STARTED') {
+    if (payload === 'WELCOME_MESSAGE') {
       await sendMessage(senderId, { text: 'Bienvenue sur notre bot ! /n Envoyez [help] pour voir les commandes du bot /n Pour soutenir le bot,contactez l admin www.facebook.com/lahatra.gameur /n Ou Envoyer par Mvola (0344322638)' }, pageAccessToken);
     } else {
       // For other postback payloads, send a default response
