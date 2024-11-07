@@ -16,11 +16,11 @@ module.exports = {
     const modifiedPrompt = `${input}, direct answer.`;
 
     try {
-      sendMessage(senderId, { text: '...✍🏻' }, pageAccessToken);
+      await sendMessage(senderId, { text: '...✍🏻' }, pageAccessToken);
       const response = await axios.get(`https://www.geo-sevent-tooldph.site/api/blackbox?prompt=${encodeURIComponent(modifiedPrompt)}`);
       const data = response.data;
-      const formattedMessage = `・──🤖blackbox🤖──・\nEn cours de maintenance⚙🔧\n・──── >ᴗ< ────・`;
-
+      const formattedMessage = `・──🤖blackbox🤖──・\n${data.response}\n・──── >ᴗ< ────・`;
+      await sendMessage(senderId, { text: 'Admin: www.facebook.com/lahatra.gameur' }, pageAccessToken);
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
     } catch (error) {
       console.error('Error:', error);
