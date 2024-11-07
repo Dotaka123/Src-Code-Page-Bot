@@ -21,7 +21,6 @@ const createMessagePayload = (senderId, text, attachment) => {
   }
 
   if (attachment) {
-    // Handle different types of attachments
     if (attachment.type === 'template') {
       messagePayload.message.attachment = {
         type: 'template',
@@ -31,11 +30,10 @@ const createMessagePayload = (senderId, text, attachment) => {
         },
       };
     } else {
-      // Handle video attachment
       messagePayload.message.attachment = {
         type: attachment.type,
         payload: {
-          url: attachment.payload.url, // Ensure this URL points to a valid video URL
+          url: attachment.payload.url,
           is_reusable: true,
         },
       };
@@ -52,22 +50,16 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
   const params = { access_token: pageAccessToken };
 
   try {
-    // Turn on typing indicator
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_ON }, params);
 
-    // Create message payload
     const messagePayload = createMessagePayload(senderId, text, attachment);
-
-    // Send the message
     await axiosPost(MESSAGE_URL, messagePayload, params);
 
-    // Turn off typing indicator
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_OFF }, params);
   } catch (e) {
     const errorMessage = e.response?.data?.error?.message || e.message;
     console.error(`Error in ${path.basename(__filename)}: ${errorMessage}`);
 
-    // Optional: Send an error message back to the user
     await axiosPost(MESSAGE_URL, {
       recipient: { id: senderId },
       message: { text: 'An error occurred while sending your message. Please try again.' },
@@ -75,4 +67,12 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
   }
 };
 
-module.exports = { sendMessage };
+// Handle postback events
+const handlePostback = async (senderId, payload, pageAccessToken) => {
+  if (payload === 'WELCOME_MESSAGE') {
+    const welcomeMessage = "Bienvenue sur notre bot ! /n Envoyez "help" pour voir les commandes du bot /n Pour soutenir le bot,contactez l'admin www.facebook.com/lahatra.gameur /n Ou Envoyer par Mvola (0344322638)";
+    await sendMessage(senderId, { text: welcomeMessage }, pageAccessToken);
+  }
+};
+
+module.exports = { sendMessage, handlePostback };
