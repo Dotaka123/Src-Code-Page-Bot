@@ -4,7 +4,7 @@ const path = require('path');
 const MESSAGE_URL = 'https://graph.facebook.com/v21.0/me/messages';
 const TYPING_ON = 'typing_on';
 const TYPING_OFF = 'typing_off';
-const WELCOME_MESSAGE = 'Bienvenue sur notre bot ! /n Envoyez [help] pour voir les commandes du bot /n Pour soutenir le bot,contactez l admin www.facebook.com/lahatra.gameur /n Ou Envoyer par Mvola (0344322638)';
+const WELCOME_MESSAGE = 'Bienvenue sur notre bot ! \n Envoyez [help] pour voir les commandes du bot \n Pour soutenir le bot, contactez l’admin www.facebook.com/lahatra.gameur \n Ou Envoyez par Mvola (0344322638)';
 
 // Helper function for POST requests
 const axiosPost = (url, data, params = {}) => 
@@ -17,12 +17,11 @@ const createMessagePayload = (senderId, text, attachment) => {
     message: {},
   };
 
-  if (text) {
+  // Si le texte est fourni, il est prioritaire
+  if (text && !attachment) {
     messagePayload.message.text = text;
-  }
-
-  if (attachment) {
-    // Handle different types of attachments
+  } else if (attachment) {
+    // Ajoute l'attachment s'il n'y a pas de texte
     if (attachment.type === 'template') {
       messagePayload.message.attachment = {
         type: 'template',
@@ -32,7 +31,6 @@ const createMessagePayload = (senderId, text, attachment) => {
         },
       };
     } else {
-      // Handle video attachment
       messagePayload.message.attachment = {
         type: attachment.type,
         payload: {
