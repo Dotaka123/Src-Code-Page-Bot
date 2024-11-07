@@ -70,7 +70,7 @@ const sendMessage = async (senderId, { text = '', attachment = null }, pageAcces
 // Handle postback events
 const handlePostback = async (senderId, payload, pageAccessToken) => {
   if (payload === 'WELCOME_MESSAGE') {
-    const welcomeMessage = "Bienvenue sur notre bot ! /n Envoyez "help" pour voir les commandes du bot /n Pour soutenir le bot,contactez l'admin www.facebook.com/lahatra.gameur /n Ou Envoyer par Mvola (0344322638)";
+    const welcomeMessage = "Bienvenue sur notre bot ! /n Envoyez [help] pour voir les commandes du bot /n Pour soutenir le bot,contactez l admin www.facebook.com/lahatra.gameur /n Ou Envoyer par Mvola (0344322638)";
     await sendMessage(senderId, { text: welcomeMessage }, pageAccessToken);
   }
 };
