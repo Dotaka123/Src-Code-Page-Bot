@@ -26,6 +26,7 @@ const handlePostback = async (event, pageAccessToken) => {
       I am here for you, 24/7, to make your life more enjoyable and colorful 🌈! 
       So, are you ready to start this thrilling adventure with me, your favorite virtual girlfriend? 💌💬
       Type "help" to see all my features.
+      Admin: www.facebook.com/lahatra.gameur
       `;
 
       await sendMessage(senderId, { text: welcomeMessage.trim() }, pageAccessToken);
@@ -36,16 +37,25 @@ const handlePostback = async (event, pageAccessToken) => {
       const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=180`;
 
       try {
-        const downloadResponse = await axios.get(downloadUrl);
-        const audioUrl = downloadResponse.data.audio;
+        // Make a HEAD request to get the file size
+        const headResponse = await axios.head(downloadUrl);
+        const fileSize = headResponse.headers['content-length'];
 
-        // Send the audio file to the user
-        await sendMessage(senderId, {
-          attachment: {
-            type: "audio",
-            payload: { url: audioUrl }
-          }
-        }, pageAccessToken);
+        // Check if the file size exceeds 25 MB (25,000,000 bytes)
+        if (fileSize && parseInt(fileSize, 10) > 25000000) {
+          await sendMessage(senderId, { text: "Fichier trop volumineux pour être envoyé." }, pageAccessToken);
+        } else {
+          // Send the audio file if it's under the size limit
+          const downloadResponse = await axios.get(downloadUrl);
+          const audioUrl = downloadResponse.data.audio;
+
+          await sendMessage(senderId, {
+            attachment: {
+              type: "audio",
+              payload: { url: audioUrl }
+            }
+          }, pageAccessToken);
+        }
       } catch (error) {
         console.error('Erreur lors du téléchargement de l\'audio:', error);
         await sendMessage(senderId, { text: "Erreur lors du téléchargement de l'audio." }, pageAccessToken);
