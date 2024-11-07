@@ -4,75 +4,83 @@ const fs = require('fs');
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
-// Create a simple in-memory store to keep track of searches
-const userSearchResults = {};
-
 module.exports = {
   name: 'video',
-  description: 'Search for YouTube videos based on user input',
-  author: 'Coffee',
+  description: 'Search YouTube videos and send audio',
+  author: 'Tata',
 
   async execute(senderId, args) {
     const pageAccessToken = token;
-    const query = args.join(' '); // Get user input as search query
-
-    if (!query) {
-      await sendMessage(senderId, { text: 'Please provide a search query.' }, pageAccessToken);
-      return;
-    }
+    const query = args.join(' ');
 
     try {
-      // Search for videos using the provided API
-      const response = await axios.get(`https://me0xn4hy3i.execute-api.us-east-1.amazonaws.com/staging/api/resolve/resolveYoutubeSearch?search=${encodeURIComponent(query)}`);
-      const data = response.data;
+      // Recherche de vidéos YouTube en fonction de l'entrée utilisateur
+      const searchResponse = await axios.get(`https://me0xn4hy3i.execute-api.us-east-1.amazonaws.com/staging/api/resolve/resolveYoutubeSearch?search=${encodeURIComponent(query)}`);
+      const videos = searchResponse.data.data;
 
-      if (data.code === 200 && data.data.length > 0) {
-        // Create a numbered list of video results
-        const videoList = data.data.map((video, index) => `${index + 1}. ${video.title}`).join('\n');
-        const message = `Here are some videos I found:\n${videoList}\n\nPlease reply with "select" followed by the number of the video you want to watch.`;
+      if (!videos.length) {
+        await sendMessage(senderId, { text: "Aucune vidéo trouvée pour votre recherche." }, pageAccessToken);
+        return;
+      }
 
-        await sendMessage(senderId, { text: message }, pageAccessToken);
+      // Envoi de la liste des vidéos avec le bouton "écouter"
+      for (const video of videos) {
+        const videoTitle = video.title;
+        const videoId = video.videoId;
 
-        // Store video data in memory for later use
-        userSearchResults[senderId] = data.data; // Store video data associated with the senderId
-      } else {
-        await sendMessage(senderId, { text: 'No videos found for your search.' }, pageAccessToken);
+        // Bouton "écouter" pour chaque vidéo trouvée
+        const buttons = [
+          {
+            type: "postback",
+            title: "Écouter",
+            payload: `LISTEN_AUDIO_${videoId}`
+          }
+        ];
+
+        const messageData = {
+          text: `Titre: ${videoTitle}\nDurée: ${video.duration}\nVues: ${video.views}`,
+          attachment: {
+            type: "template",
+            payload: {
+              template_type: "button",
+              text: `🎬 ${videoTitle}`,
+              buttons
+            }
+          }
+        };
+
+        await sendMessage(senderId, messageData, pageAccessToken);
       }
     } catch (error) {
-      console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Error: Unexpected error occurred while searching for videos.' }, pageAccessToken);
+      console.error('Erreur lors de la recherche YouTube:', error);
+      await sendMessage(senderId, { text: "Erreur lors de la recherche de vidéos." }, pageAccessToken);
     }
   },
 
-  async handleUserResponse(senderId, userResponse) {
-    console.log("User response received:", userResponse); // Log the user response
+  // Traitement des postbacks pour écouter l'audio
+  async handlePostback(senderId, payload) {
+    const pageAccessToken = token;
 
-    try {
-      // Check if the user response starts with "select"
-      if (userResponse.toLowerCase().startsWith('select ')) {
-        const numberPart = userResponse.slice(7).trim(); // Extract the number part after "select"
-        const videoIndex = parseInt(numberPart, 10) - 1; // Convert response to index
-        
-        if (userSearchResults[senderId] && userSearchResults[senderId][videoIndex]) {
-          const videoId = userSearchResults[senderId][videoIndex].videoId;
-          const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
+    if (payload.startsWith("LISTEN_AUDIO_")) {
+      const videoId = payload.split("_")[2];
+      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=180`;
 
-          // Send the video URL directly
-          await sendMessage(senderId, {
-            text: `Here is the video you requested: ${videoUrl}`, // Use text instead of attachment
-          }, token);
+      try {
+        // Téléchargement de l'audio de la vidéo
+        const downloadResponse = await axios.get(downloadUrl);
+        const audioUrl = downloadResponse.data.audio;
 
-          // Optionally, you can delete the user's search results after sending the link
-          delete userSearchResults[senderId]; // Clean up after use
-        } else {
-          await sendMessage(senderId, { text: 'Invalid number. Please try again.' }, token);
-        }
-      } else {
-        await sendMessage(senderId, { text: 'Please reply with "select" followed by the number of the video you want to watch.' }, token);
+        // Envoi du message vocal à l'utilisateur
+        await sendMessage(senderId, {
+          attachment: {
+            type: "audio",
+            payload: { url: audioUrl }
+          }
+        }, pageAccessToken);
+      } catch (error) {
+        console.error('Erreur lors du téléchargement de l\'audio:', error);
+        await sendMessage(senderId, { text: "Erreur lors du téléchargement de l'audio." }, pageAccessToken);
       }
-    } catch (error) {
-      console.error('Error handling user response:', error);
-      await sendMessage(senderId, { text: 'Error: Unable to retrieve the video.' }, token);
     }
   }
 };
