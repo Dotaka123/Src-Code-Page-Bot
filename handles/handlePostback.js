@@ -11,7 +11,7 @@ const handlePostback = async (event, pageAccessToken) => {
 
   try {
     // Vérifier si le payload est 'GET_STARTED' pour envoyer un message de bienvenue avec des boutons
-    if (payload === 'GET_STARTED') {
+    if (payload === 'WELCOME_MESSAGE') {
       const welcomeMessage = `
 🇫🇷: Bienvenue dans l'univers de Girlfriend AI, votre petite amie virtuelle 🌟! 
 Préparez-vous à vivre une expérience unique et amusante avec moi 🤖💕!
