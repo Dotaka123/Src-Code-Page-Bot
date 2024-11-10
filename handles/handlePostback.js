@@ -1,4 +1,5 @@
 const { sendMessage } = require('./sendMessage');
+const { setMode } = require('../commands/gpt4');
 
 const handlePostback = async (event, pageAccessToken) => {
   const { id: senderId } = event.sender || {};
@@ -9,13 +10,11 @@ const handlePostback = async (event, pageAccessToken) => {
   }
 
   try {
-    // Vérifier si le payload est 'GET_STARTED' pour envoyer un message de bienvenue avec des quick replies
     if (payload === 'WELCOME_MESSAGE') {
       const welcomeMessage = `
 🇫🇷: Bienvenue dans l'univers de Girlfriend AI 🌟!
 Choisissez votre mode de conversation pour commencer :
       `;
-
       await sendMessage(senderId, {
         text: welcomeMessage.trim(),
         quickReplies: [
@@ -25,9 +24,11 @@ Choisissez votre mode de conversation pour commencer :
       }, pageAccessToken);
 
     } else if (payload === 'MODE_FILLE') {
+      setMode(senderId, 'FILLE');
       await sendMessage(senderId, { text: 'Mode fille activé ! 💕 Prête à discuter avec Miora !' }, pageAccessToken);
 
     } else if (payload === 'MODE_GARCON') {
+      setMode(senderId, 'GARCON');
       await sendMessage(senderId, { text: 'Mode garçon activé ! 💙 Prêt à discuter avec Nario !' }, pageAccessToken);
 
     } else {
