@@ -11,27 +11,23 @@ const handlePostback = async (event, pageAccessToken) => {
 
   try {
     if (payload === 'WELCOME_MESSAGE') {
-      const welcomeMessage = `
-🇫🇷 Bienvenue dans l'univers de Girlfriend AI 🌟! 
-Choisissez votre mode de conversation pour commencer :
-      `;
+      const welcomeMessage = '🇫🇷 Bienvenue dans l\'univers de Girlfriend AI 🌟!\nChoisissez votre mode de conversation pour commencer :';
 
       // Envoyer les boutons pour choisir le mode
-      await sendMessage(senderId, {
-        text: welcomeMessage.trim(),
-        buttons: [
-          {
-            type: 'postback',
-            title: 'Mode fille 💖',
-            payload: 'MODE_FILLE'
-          },
-          {
-            type: 'postback',
-            title: 'Mode garçon 💙',
-            payload: 'MODE_GARCON'
-          }
-        ]
-      }, pageAccessToken);
+      const buttons = [
+        {
+          type: 'postback',
+          title: 'Mode fille 💖',
+          payload: 'MODE_FILLE'
+        },
+        {
+          type: 'postback',
+          title: 'Mode garçon 💙',
+          payload: 'MODE_GARCON'
+        }
+      ];
+
+      await sendMessage(senderId, { text: welcomeMessage, buttons }, pageAccessToken);
     }
 
     // Gestion du mode fille
