@@ -26,13 +26,15 @@ async function handleMessage(event, pageAccessToken) {
 
   try {
     if (commands.has(commandName.toLowerCase())) {
+      // Execute the corresponding command
       await commands.get(commandName.toLowerCase()).execute(senderId, args, pageAccessToken, sendMessage);
     } else {
-      await commands.get('gpt4').execute(senderId, [messageText], pageAccessToken);
+      // Handle unknown commands
+      await sendMessage(senderId, { text: `Commande inconnue. Tapez '-help' pour voir la liste des commandes disponibles.` }, pageAccessToken);
     }
   } catch (error) {
     console.error(`Error executing command:`, error);
-    await sendMessage(senderId, { text: error.message || 'There was an error executing that command.' }, pageAccessToken);
+    await sendMessage(senderId, { text: error.message || 'Il y a eu une erreur en exécutant cette commande.' }, pageAccessToken);
   }
 }
 
