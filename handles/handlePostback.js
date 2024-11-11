@@ -1,3 +1,4 @@
+const axios = require('axios');
 const { sendMessage } = require('./sendMessage');
 const { setUserMode } = require('../commands/gpt4');
 
@@ -29,7 +30,7 @@ const handlePostback = async (event, pageAccessToken) => {
 
       await sendMessage(senderId, { text: welcomeMessage, buttons }, pageAccessToken);
     }
-
+    
     // Gestion du mode fille
     else if (payload === 'MODE_FILLE') {
       setUserMode(senderId, 'fille');
@@ -40,7 +41,37 @@ const handlePostback = async (event, pageAccessToken) => {
     else if (payload === 'MODE_GARCON') {
       setUserMode(senderId, 'garcon');
       await sendMessage(senderId, { text: 'Mode garçon activé ! 💙 Parlez avec Nario !' }, pageAccessToken);
-    } else {
+    }
+
+    // Gestion du postback "Écouter"
+    else if (payload.startsWith('LISTEN_AUDIO_')) {
+      const videoId = payload.split('_')[2];
+      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=128`;
+
+      try {
+        // Utiliser l'API pour télécharger l'audio en MP3
+        const downloadResponse = await axios.get(downloadUrl);
+        const audioUrl = downloadResponse.data.audio;
+
+        if (audioUrl) {
+          // Envoyer le fichier audio à l'utilisateur
+          await sendMessage(senderId, {
+            attachment: {
+              type: 'audio',
+              payload: { url: audioUrl }
+            }
+          }, pageAccessToken);
+        } else {
+          await sendMessage(senderId, { text: 'Impossible de récupérer l\'audio.' }, pageAccessToken);
+        }
+      } catch (error) {
+        console.error('Erreur lors du téléchargement de l\'audio:', error.message);
+        await sendMessage(senderId, { text: 'Erreur lors du téléchargement de l\'audio.' }, pageAccessToken);
+      }
+    } 
+    
+    // Pour tout autre postback inconnu
+    else {
       await sendMessage(senderId, { text: `Postback inconnu : ${payload}` }, pageAccessToken);
     }
   } catch (error) {
