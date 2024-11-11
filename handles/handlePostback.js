@@ -49,6 +49,7 @@ const handlePostback = async (event, pageAccessToken) => {
       const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=128`;
 
       try {
+        sendMessage(senderId, { text: 'Telechargement de l\'audio en cours...' }, pageAccessToken);
         // Utiliser l'API pour télécharger l'audio en MP3
         const downloadResponse = await axios.get(downloadUrl);
         const audioUrl = downloadResponse.data.audio;
