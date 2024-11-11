@@ -41,7 +41,7 @@ module.exports = {
 
       // Requête API avec le prompt personnalisé
       const response = await axios.get(
-        `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${senderId}`
+        `https://ccprojectapis.ddns.net/api/gpt4turbo?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${senderId}`
       );
       const data = response.data;
       const formattedMessage = `・──💕${mode === 'fille' ? 'Miora' : 'Nario'}💕──・\n${data.response}\n・──── >ᴗ< ────・`;
