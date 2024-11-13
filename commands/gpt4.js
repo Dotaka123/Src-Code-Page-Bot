@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
-import { speak } from 'google-translate-api-x'; // Import speak function
+const { speak } = require('google-translate-api-x'); // Utilisez require au lieu de import // Import speak function
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
