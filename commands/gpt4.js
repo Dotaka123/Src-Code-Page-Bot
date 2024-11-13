@@ -1,9 +1,7 @@
 const axios = require('axios');
 const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
-const { speak } = require('google-translate-api-x');
-const FormData = require('form-data');
-const request = require('request');
+const { speak } = require('google-translate-api-x'); // Import the speak function
 const token = fs.readFileSync('token.txt', 'utf8');
 
 // Stocker les préférences des utilisateurs
@@ -70,41 +68,59 @@ module.exports = {
         // Diviser le texte en morceaux si nécessaire
         const chunks = splitTextIntoChunks(data.response);
 
-        // Créer une promesse pour chaque morceau
         for (const chunk of chunks) {
-          const audioResponse = await speak(chunk, { to: 'fr', gender: 'female' }); // Voix féminine
+          try {
+            // Créer la réponse vocale avec une voix féminine
+            const audioResponse = await speak(chunk, { to: 'fr', gender: 'female' });
 
-          const filePath = 'audioResponse.mp3';
-
-          // Sauvegarder le fichier audio
-          fs.writeFileSync(filePath, audioResponse, { encoding: 'base64' });
-
-          // Préparer l'audio pour l'envoi
-          const form = new FormData();
-          form.append('filedata', fs.createReadStream(filePath));
-
-          // Upload via the Messenger API (using form-data to send audio)
-          const options = {
-            method: 'POST',
-            url: `https://graph.facebook.com/v14.0/me/messages?access_token=${pageAccessToken}`,
-            headers: form.getHeaders(),
-            formData: form
-          };
-
-          // Envoi de l'audio à l'utilisateur
-          request(options, function (error, response, body) {
-            if (error) {
-              console.error('Error uploading audio:', error);
-            } else {
-              const attachmentId = JSON.parse(body).attachment_id;
-              sendMessage(senderId, {
-                attachment: {
-                  type: 'audio',
-                  payload: { attachment_id: attachmentId }
-                }
-              }, pageAccessToken);
+            if (!audioResponse) {
+              console.error('Error: No audio response received.');
+              continue; // Skip if no audio is returned
             }
-          });
+
+            const filePath = 'audioResponse.mp3';
+
+            // Sauvegarder le fichier audio localement
+            fs.writeFileSync(filePath, audioResponse, { encoding: 'base64' });
+
+            // Préparer l'audio pour l'envoi
+            const form = new FormData();
+            form.append('filedata', fs.createReadStream(filePath));
+
+            // Upload via the Messenger API (using form-data to send audio)
+            const options = {
+              method: 'POST',
+              url: `https://graph.facebook.com/v14.0/me/messages?access_token=${pageAccessToken}`,
+              headers: form.getHeaders(),
+              formData: form
+            };
+
+            // Envoi de l'audio à l'utilisateur
+            request(options, function (error, response, body) {
+              if (error) {
+                console.error('Error uploading audio:', error);
+              } else {
+                try {
+                  const attachmentId = JSON.parse(body).attachment_id;
+
+                  if (attachmentId) {
+                    sendMessage(senderId, {
+                      attachment: {
+                        type: 'audio',
+                        payload: { attachment_id: attachmentId }
+                      }
+                    }, pageAccessToken);
+                  } else {
+                    console.error('No attachment_id in response.');
+                  }
+                } catch (error) {
+                  console.error('Error parsing the response:', error);
+                }
+              }
+            });
+          } catch (error) {
+            console.error('Error generating speech:', error);
+          }
         }
       }
 
