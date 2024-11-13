@@ -6,7 +6,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": ["npm install google-translate-api-x","npm install hercai"],
   "author": "",
   "license": "ISC",
   "dependencies": {
@@ -17,8 +17,6 @@
     "node-fetch": "^3.3.2",
     "request": "^2.88.2",
     "winston": "^3.13.0",
-    "google-translate-api-x": "^1.0.0",
-    "hercai": "^1.0.0"
   },
   "engines": {
     "node": "20.x"
