@@ -11,7 +11,7 @@ const token = fs.readFileSync('token.txt', 'utf8');
 const userPreferences = {};
 
 const prompts = {
-  fille: `Imagine que tu es ma petite amie nommée **Miora**. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
+  fille: `Imagine que tu es ma petite amie nommée **Miora**.Creee par un jeune etudiant a Fjkm fanovozantsoa Ivato nomme Lahatra. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
 
   Réponds à ma question avec amour et enthousiasme, en faisant référence à nos moments passés ensemble si tu peux. Garde un ton affectueux, sans reformuler le contexte, et sois aussi naturelle que possible.
 
@@ -52,33 +52,47 @@ module.exports = {
       // Envoyer le message texte
       await sendMessage(senderId, { text: messageText }, pageAccessToken);
 
-      // Convertir la réponse en audio avec Google Translate API
-      const res = await speak(messageText, { to: 'fr' }); // Langue de conversion à ajuster selon les besoins
-
-      // Enregistrer le fichier audio en MP3
-      const audioFileName = 'audio.mp3';
-      writeFileSync(audioFileName, res, { encoding: 'base64' });
-
-      // Créer un stream pour l'audio
-      const audioData = createReadStream(audioFileName);
-
-      // Créer le formulaire pour envoyer l'audio via Messenger
-      const formData = new form();
-      formData.append('recipient', JSON.stringify({ id: senderId }));
-      formData.append('message', JSON.stringify({
-        attachment: {
-          type: 'audio',
-          payload: {},
+      // Fonction pour diviser un texte en morceaux de 200 caractères maximum
+      const splitText = (text, maxLength = 200) => {
+        const result = [];
+        for (let i = 0; i < text.length; i += maxLength) {
+          result.push(text.slice(i, i + maxLength));
         }
-      }));
-      formData.append('filedata', audioData);
+        return result;
+      };
 
-      // Faire la requête POST pour envoyer l'audio via Messenger
-      await axios.post(`https://graph.facebook.com/v17.0/me/messages?access_token=${pageAccessToken}`, formData, {
-        headers: {
-          ...formData.getHeaders(),
-        }
-      });
+      // Diviser le texte en morceaux si nécessaire
+      const textChunks = splitText(messageText);
+
+      // Convertir chaque morceau en audio et l'envoyer
+      for (let chunk of textChunks) {
+        const res = await speak(chunk, { to: 'fr' }); // Langue de conversion à ajuster selon les besoins
+
+        // Enregistrer le fichier audio en MP3
+        const audioFileName = 'audio.mp3';
+        writeFileSync(audioFileName, res, { encoding: 'base64' });
+
+        // Créer un stream pour l'audio
+        const audioData = createReadStream(audioFileName);
+
+        // Créer le formulaire pour envoyer l'audio via Messenger
+        const formData = new form();
+        formData.append('recipient', JSON.stringify({ id: senderId }));
+        formData.append('message', JSON.stringify({
+          attachment: {
+            type: 'audio',
+            payload: {},
+          }
+        }));
+        formData.append('filedata', audioData);
+
+        // Faire la requête POST pour envoyer l'audio via Messenger
+        await axios.post(`https://graph.facebook.com/v17.0/me/messages?access_token=${pageAccessToken}`, formData, {
+          headers: {
+            ...formData.getHeaders(),
+          }
+        });
+      }
 
     } catch (error) {
       console.error('Erreur:', error);
