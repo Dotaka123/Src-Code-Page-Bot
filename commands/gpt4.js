@@ -2,14 +2,16 @@ const axios = require('axios');
 const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
 const { speak } = require('google-translate-api-x');
-
+const FormData = require('form-data');
+const path = require('path');
+const request = require('request');
 const token = fs.readFileSync('token.txt', 'utf8');
 
 // Stocker les préférences des utilisateurs
 const userPreferences = {};
 
 const prompts = {
-  fille: `Imagine que tu es ma petite amie nommée **Miora**.Tu a ete creer par un jeune garcon nomme Lahatra qui etudie a Fjkm Fanovozantsoa Ivato. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
+  fille: `Imagine que tu es ma petite amie nommée **Miora**. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
 
       Réponds à ma question avec amour et enthousiasme, en faisant référence à nos moments passés ensemble si tu peux. Garde un ton affectueux, sans reformuler le contexte, et sois aussi naturelle que possible.
 
@@ -20,6 +22,20 @@ const prompts = {
 
       Ma question est :`,
 };
+
+// Fonction pour couper un texte en petits morceaux
+function splitTextIntoChunks(text, maxLength = 200) {
+  const chunks = [];
+  while (text.length > maxLength) {
+    const chunk = text.substring(0, maxLength);
+    chunks.push(chunk);
+    text = text.substring(maxLength);
+  }
+  if (text.length > 0) {
+    chunks.push(text);
+  }
+  return chunks;
+}
 
 module.exports = {
   name: 'gpt4',
@@ -50,27 +66,50 @@ module.exports = {
       // Envoyer la réponse textuelle
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
 
-      // Définir la langue et le genre de la voix
-      const voiceLang = 'fr'; // Français
-      const voiceGender = mode === 'fille' ? 'female' : 'male'; // Choisir le genre de la voix
+      // Si le mode est "fille" ou "garcon", générer un message vocal et choisir la voix
+      if (mode === 'fille' || mode === 'garcon') {
+        const voiceLanguage = 'fr'; // Utiliser la langue française
+        const voiceGender = mode === 'fille' ? 'female' : 'male'; // Déterminer la voix
 
-      // Générer un message vocal à partir de la réponse textuelle
-      const audioResponse = await speak(data.response, { to: voiceLang, gender: voiceGender });
-      const filePath = 'audioResponse.mp3';
+        // Diviser le texte en morceaux si nécessaire
+        const chunks = splitTextIntoChunks(data.response);
 
-      // Sauvegarder le fichier audio
-      fs.writeFileSync(filePath, audioResponse, { encoding: 'base64' });
+        // Créer une promesse pour chaque morceau
+        for (const chunk of chunks) {
+          const audioResponse = await speak(chunk, { to: voiceLanguage, gender: voiceGender }); // Choisir la voix selon le mode
+          const filePath = path.join(__dirname, 'audioResponse.mp3');
 
-      // Envoyer le fichier audio à l'utilisateur
-      await sendMessage(senderId, {
-        attachment: {
-          type: 'audio',
-          payload: {
-            url: `https://yourdomain.com/${filePath}`, // Remplacez par l'URL de votre serveur pour le fichier audio
-            is_reusable: true,
-          },
-        },
-      }, pageAccessToken);
+          // Sauvegarder le fichier audio
+          fs.writeFileSync(filePath, audioResponse, { encoding: 'base64' });
+
+          // Préparer l'audio pour l'envoi
+          const form = new FormData();
+          form.append('filedata', fs.createReadStream(filePath));
+
+          // Upload via the Messenger API (using form-data to send audio)
+          const options = {
+            method: 'POST',
+            url: `https://graph.facebook.com/v14.0/me/messages?access_token=${pageAccessToken}`,
+            headers: form.getHeaders(),
+            formData: form
+          };
+
+          // Envoi de l'audio à l'utilisateur
+          request(options, function (error, response, body) {
+            if (error) {
+              console.error('Error uploading audio:', error);
+            } else {
+              const attachmentId = JSON.parse(body).attachment_id;
+              sendMessage(senderId, {
+                attachment: {
+                  type: 'audio',
+                  payload: { attachment_id: attachmentId }
+                }
+              }, pageAccessToken);
+            }
+          });
+        }
+      }
 
     } catch (error) {
       console.error('Error:', error);
