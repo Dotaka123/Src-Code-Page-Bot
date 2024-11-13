@@ -29,7 +29,7 @@ module.exports = {
       const aiReply = response.reply;
 
       // Format du message à envoyer
-      const formattedMessage = `・────🤖Hercai🤖────・\n${aiReply}\n・───────────────・`;
+      const formattedMessage = `・──🤖Hercai🤖──・\n${aiReply}\n・──────────・`;
 
       // Envoi de la réponse à l'utilisateur
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
