@@ -3,7 +3,6 @@ const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
 const { speak } = require('google-translate-api-x');
 const FormData = require('form-data');
-const path = require('path');
 const request = require('request');
 const token = fs.readFileSync('token.txt', 'utf8');
 
@@ -66,18 +65,16 @@ module.exports = {
       // Envoyer la réponse textuelle
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
 
-      // Si le mode est "fille" ou "garcon", générer un message vocal et choisir la voix
-      if (mode === 'fille' || mode === 'garcon') {
-        const voiceLanguage = 'fr'; // Utiliser la langue française
-        const voiceGender = mode === 'fille' ? 'female' : 'male'; // Déterminer la voix
-
+      // Si le mode est "fille", générer un message vocal (voix féminine par défaut)
+      if (mode === 'fille') {
         // Diviser le texte en morceaux si nécessaire
         const chunks = splitTextIntoChunks(data.response);
 
         // Créer une promesse pour chaque morceau
         for (const chunk of chunks) {
-          const audioResponse = await speak(chunk, { to: voiceLanguage, gender: voiceGender }); // Choisir la voix selon le mode
-          const filePath = path.join(__dirname, 'audioResponse.mp3');
+          const audioResponse = await speak(chunk, { to: 'fr', gender: 'female' }); // Voix féminine
+
+          const filePath = 'audioResponse.mp3';
 
           // Sauvegarder le fichier audio
           fs.writeFileSync(filePath, audioResponse, { encoding: 'base64' });
