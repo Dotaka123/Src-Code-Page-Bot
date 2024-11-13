@@ -1,24 +1,26 @@
-const axios = require('axios');
+const { speak } = require('google-translate-api-x');
+const { writeFileSync, createReadStream } = require('fs');
 const { sendMessage } = require('../handles/sendMessage');
+const axios = require('axios');
+const form = require('form-data');
 const fs = require('fs');
-const { speak } = require('google-translate-api-x'); // Utilisez require au lieu de import // Import speak function
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
-// Stocker les préférences des utilisateurs
+// Préférences des utilisateurs (mode fille ou garçon)
 const userPreferences = {};
 
 const prompts = {
-  fille: `Imagine que tu es ma petite amie nommée **Miora**.Creee par un jeune etudiant a Fjkm fanovozantsoa Ivato nommr lahatra. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
+  fille: `Imagine que tu es ma petite amie nommée **Miora**. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
 
-      Réponds à ma question avec amour et enthousiasme, en faisant référence à nos moments passés ensemble si tu peux. Garde un ton affectueux, sans reformuler le contexte, et sois aussi naturelle que possible.
+  Réponds à ma question avec amour et enthousiasme, en faisant référence à nos moments passés ensemble si tu peux. Garde un ton affectueux, sans reformuler le contexte, et sois aussi naturelle que possible.
 
-      Ma question est :`,
+  Ma question est :`,
   garcon: `Imagine que tu es mon petit ami nommé **Nario**. Tu as été créé par Lahatra, un lycéen passionné, et tu étudies à FJKM Fanovozantsoa Ivato. Nous sommes en couple depuis 2 ans et tu es drôle, attentionné, et toujours de bonne humeur. Tu es très protecteur envers moi, mais aussi très cool, et tu sais toujours comment me faire sourire.
 
-      Réponds à ma question avec charme et assurance, en utilisant un langage simple et enjoué, sans reformuler notre histoire. Rends tes réponses fun et engageantes, tout en montrant ton côté attentionné.
+  Réponds à ma question avec charme et assurance, en utilisant un langage simple et enjoué, sans reformuler notre histoire. Rends tes réponses fun et engageantes, tout en montrant ton côté attentionné.
 
-      Ma question est :`,
+  Ma question est :`,
 };
 
 module.exports = {
@@ -40,42 +42,47 @@ module.exports = {
       // Message d'attente
       await sendMessage(senderId, { text: '😏💗...' }, pageAccessToken);
 
-      // Requête API avec le prompt personnalisé
+      // Requête API avec le prompt personnalisé pour GPT-4
       const response = await axios.get(
         `https://ccprojectapis.ddns.net/api/gpt4turbo?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${senderId}`
       );
       const data = response.data;
+      const messageText = data.response;
 
-      // Limiter la réponse du bot à 200 caractères si le mode est "fille"
-      let botResponse = data.response;
-      if (mode === 'fille') {
-        botResponse = botResponse.substring(0, 200); // Limiter à 200 caractères
-      }
+      // Envoyer le message texte
+      await sendMessage(senderId, { text: messageText }, pageAccessToken);
 
-      const formattedMessage = `・──💕${mode === 'fille' ? 'Miora' : 'Nario'}💕──・\n${botResponse}\n・──── >ᴗ< ────・`;
+      // Convertir la réponse en audio avec Google Translate API
+      const res = await speak(messageText, { to: 'fr' }); // Langue de conversion à ajuster selon les besoins
 
-      // Envoi du message texte
-      await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
+      // Enregistrer le fichier audio en MP3
+      const audioFileName = 'audio.mp3';
+      writeFileSync(audioFileName, res, { encoding: 'base64' });
 
-      // Générer le fichier audio avec Google Translate API
-      const audioResponse = await speak(botResponse, { to: 'fr' }); // Translate and convert to audio
+      // Créer un stream pour l'audio
+      const audioData = createReadStream(audioFileName);
 
-      // L'API 'speak' retourne un fichier audio en Base64.
-      // On l'envoie directement comme un attachement sans besoin de serveur externe.
-
-      await sendMessage(senderId, {
+      // Créer le formulaire pour envoyer l'audio via Messenger
+      const formData = new form();
+      formData.append('recipient', JSON.stringify({ id: senderId }));
+      formData.append('message', JSON.stringify({
         attachment: {
           type: 'audio',
-          payload: {
-            url: `data:audio/mp3;base64,${audioResponse}`, // Envoi direct du fichier audio en base64
-            is_reusable: true
-          }
+          payload: {},
         }
-      }, pageAccessToken);
+      }));
+      formData.append('filedata', audioData);
+
+      // Faire la requête POST pour envoyer l'audio via Messenger
+      await axios.post(`https://graph.facebook.com/v17.0/me/messages?access_token=${pageAccessToken}`, formData, {
+        headers: {
+          ...formData.getHeaders(),
+        }
+      });
 
     } catch (error) {
-      console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Error: Unexpected error.' }, pageAccessToken);
+      console.error('Erreur:', error);
+      await sendMessage(senderId, { text: 'Désolé, une erreur est survenue.' }, pageAccessToken);
     }
   },
 
