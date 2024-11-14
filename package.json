@@ -20,7 +20,7 @@
     "google-translate-api-x": "*",
     "hercai": "*",
     "optiic": "*",
-    "gifted-gpt": "*"
+    "weathers-watch": "*"
   },
   "engines": {
     "node": "20.x"
