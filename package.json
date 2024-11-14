@@ -20,7 +20,7 @@
     "google-translate-api-x": "*",
     "hercai": "*",
     "optiic": "*",
-    "dekuai": "*"
+    "gifted-gpt": "*"
   },
   "engines": {
     "node": "20.x"
