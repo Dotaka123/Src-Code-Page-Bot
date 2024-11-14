@@ -8,8 +8,6 @@ module.exports = {
   name: "weather",
   description: "Obtenez la météo actuelle d'un lieu",
   author: "Tata",
-  usage:"weather [the place]",
-
 
   async execute(senderId, args) {
     const pageAccessToken = token;
@@ -29,10 +27,10 @@ module.exports = {
       // Appel à l'API pour obtenir la météo
       const weatherResult = await getWeather(locationQuery);
 
-      if (!weatherResult) {
+      if (!weatherResult || !weatherResult.currentWeather) {
         await sendMessage(
           senderId,
-          { text: `❌ Désolé, je n'ai pas pu trouver la météo pour "${locationQuery}".` },
+          { text: `❌ Désolé, aucune donnée météo n'est disponible pour "${locationQuery}".` },
           pageAccessToken
         );
         return;
