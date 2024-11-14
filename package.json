@@ -19,7 +19,8 @@
     "winston": "^3.13.0",
     "google-translate-api-x": "*",
     "hercai": "*",
-    "optiic": "*"
+    "optiic": "*",
+    "dekuai": "*"
   },
   "engines": {
     "node": "20.x"
