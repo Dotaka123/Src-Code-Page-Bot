@@ -18,7 +18,8 @@
     "request": "^2.88.2",
     "winston": "^3.13.0",
     "google-translate-api-x": "*",
-    "hercai": "*"
+    "hercai": "*",
+    "optiic": "*"
   },
   "engines": {
     "node": "20.x"
