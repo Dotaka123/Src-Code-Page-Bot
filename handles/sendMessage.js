@@ -11,7 +11,7 @@ const axiosPost = (url, data, params = {}) =>
   axios.post(url, data, { params }).then(res => res.data);
 
 // Function to create message payload
-const createMessagePayload = (senderId, text, attachment) => {
+const createMessagePayload = (senderId, text, attachment, quickReplies) => {
   const messagePayload = {
     recipient: { id: senderId },
     message: {},
@@ -23,12 +23,17 @@ const createMessagePayload = (senderId, text, attachment) => {
     messagePayload.message.attachment = attachment;
   }
 
+  // Ajout des quick replies si fournis
+  if (quickReplies) {
+    messagePayload.message.quick_replies = quickReplies;
+  }
+
   return messagePayload;
 };
 
 // Send a message with typing indicators
-const sendMessage = async (senderId, { text = '', buttons = null, attachment = null }, pageAccessToken) => {
-  if (!text && !attachment && !buttons) return;
+const sendMessage = async (senderId, { text = '', buttons = null, attachment = null, quickReplies = null }, pageAccessToken) => {
+  if (!text && !attachment && !buttons && !quickReplies) return;
 
   const params = { access_token: pageAccessToken };
 
@@ -36,7 +41,7 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
     // Envoie l'indicateur de saisie
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_ON }, params);
 
-    // Construction du payload pour les boutons
+    // Construction du payload pour les boutons ou les quick replies
     let messagePayload;
     if (buttons) {
       messagePayload = {
@@ -50,6 +55,15 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
               buttons: buttons
             }
           }
+        }
+      };
+    } else if (quickReplies) {
+      // Payload pour les quick replies
+      messagePayload = {
+        recipient: { id: senderId },
+        message: {
+          text: text,
+          quick_replies: quickReplies
         }
       };
     } else {
