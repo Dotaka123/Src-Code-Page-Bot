@@ -2,6 +2,9 @@ const axios = require('axios');
 const { sendMessage } = require('./sendMessage');
 const { setUserMode } = require('../commands/gpt4');
 
+// Map pour mémoriser le choix de l'utilisateur
+const userDefaults = new Map();
+
 const handlePostback = async (event, pageAccessToken) => {
   const { id: senderId } = event.sender || {};
   const { payload } = event.postback || {};
@@ -14,7 +17,7 @@ const handlePostback = async (event, pageAccessToken) => {
     if (payload === 'WELCOME_MESSAGE') {
       const welcomeMessage = '🇫🇷 Bienvenue dans l\'univers de Girlfriend AI 🌟!\nChoisissez votre mode de conversation pour commencer :';
 
-      // Envoyer les boutons pour choisir le mode
+      // Envoyer les boutons pour choisir le mode fille ou garçon
       const buttons = [
         {
           type: 'postback',
@@ -28,7 +31,21 @@ const handlePostback = async (event, pageAccessToken) => {
         }
       ];
 
-      await sendMessage(senderId, { text: welcomeMessage, buttons }, pageAccessToken);
+      // Ajouter des quick replies pour sélectionner Gpt4 ou Hercai
+      const quickReplies = [
+        {
+          content_type: 'text',
+          title: 'Gpt4',
+          payload: 'GPT4'
+        },
+        {
+          content_type: 'text',
+          title: 'Hercai',
+          payload: 'HERCAI'
+        }
+      ];
+
+      await sendMessage(senderId, { text: welcomeMessage, buttons, quick_replies: quickReplies }, pageAccessToken);
     }
     
     // Gestion du mode fille
@@ -43,6 +60,20 @@ const handlePostback = async (event, pageAccessToken) => {
       await sendMessage(senderId, { text: 'Mode garçon activé ! 💙 Parlez avec Nario !' }, pageAccessToken);
     }
 
+    // Gestion du Quick Reply pour Gpt4
+    else if (payload === 'GPT4') {
+      console.log('Quick Reply "Gpt4" sélectionné');
+      userDefaults.set(senderId, 'gpt4'); // Enregistrer 'gpt4' comme commande par défaut
+      await sendMessage(senderId, { text: 'Mode GPT-4 activé ! 🧠' }, pageAccessToken);
+    }
+
+    // Gestion du Quick Reply pour Hercai
+    else if (payload === 'HERCAI') {
+      console.log('Quick Reply "Hercai" sélectionné');
+      userDefaults.set(senderId, 'hercai'); // Enregistrer 'hercai' comme commande par défaut
+      await sendMessage(senderId, { text: 'Mode Hercai activé ! 🎭' }, pageAccessToken);
+    }
+
     // Gestion du postback "Écouter"
     else if (payload.startsWith('LISTEN_AUDIO_')) {
       const videoId = payload.split('_')[2];
@@ -50,12 +81,10 @@ const handlePostback = async (event, pageAccessToken) => {
 
       try {
         sendMessage(senderId, { text: 'Telechargement de l\'audio en cours...' }, pageAccessToken);
-        // Utiliser l'API pour télécharger l'audio en MP3
         const downloadResponse = await axios.get(downloadUrl);
         const audioUrl = downloadResponse.data.audio;
 
         if (audioUrl) {
-          // Envoyer le fichier audio à l'utilisateur
           await sendMessage(senderId, {
             attachment: {
               type: 'audio',
@@ -81,4 +110,5 @@ const handlePostback = async (event, pageAccessToken) => {
   }
 };
 
-module.exports = { handlePostback };
+// Exporter la fonction userDefaults pour l'utiliser ailleurs
+module.exports = { handlePostback, userDefaults };
