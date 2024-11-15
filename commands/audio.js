@@ -65,7 +65,7 @@ module.exports = {
 
     if (payload.startsWith("LISTEN_AUDIO_")) {
       const videoId = payload.split("_")[2];
-      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=180`;
+      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=128`;
 
       try {
         // Téléchargement de l'audio de la vidéo
