@@ -1,11 +1,11 @@
 const fs = require('fs');
 const path = require('path');
 const { sendMessage } = require('./sendMessage');
+const { userDefaults } = require('./handlePostback');
 
 const commands = new Map();
 const prefix = '-';
 
-// Load command modules
 fs.readdirSync(path.join(__dirname, '../commands'))
   .filter(file => file.endsWith('.js'))
   .forEach(file => {
@@ -28,7 +28,9 @@ async function handleMessage(event, pageAccessToken) {
     if (commands.has(commandName.toLowerCase())) {
       await commands.get(commandName.toLowerCase()).execute(senderId, args, pageAccessToken, sendMessage);
     } else {
-      await commands.get('gpt4').execute(senderId, [messageText], pageAccessToken);
+      const defaultCommand = userDefaults.get(senderId) || 'gpt4';
+      console.log(`Commande par défaut pour l'utilisateur ${senderId}: ${defaultCommand}`);
+      await commands.get(defaultCommand).execute(senderId, [messageText], pageAccessToken);
     }
   } catch (error) {
     console.error(`Error executing command:`, error);
