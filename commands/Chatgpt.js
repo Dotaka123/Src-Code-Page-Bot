@@ -16,9 +16,9 @@ module.exports = {
     const modifiedPrompt = `${input}, direct answer.`;
 
     try {
-      const response = await axios.get(`https://www.samirxpikachu.run.place/gpt?content=${encodeURIComponent(modifiedPrompt)}`);
+      const response = await axios.get(`https://api.kenliejugarap.com/freegpt-openai/?question=${encodeURIComponent(modifiedPrompt)}`);
       const data = response.data;
-      const formattedMessage = `・────chatgpt────・\n${data.message.content}\n・──── >ᴗ< ────・`;
+      const formattedMessage = `・────chatgpt────・\n${data.response}\n・──── >ᴗ< ────・`;
 
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
     } catch (error) {
