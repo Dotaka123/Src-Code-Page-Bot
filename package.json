@@ -20,7 +20,8 @@
     "google-translate-api-x": "*",
     "hercai": "*",
     "optiic": "*",
-    "weathers-watch": "*"
+    "weathers-watch": "*",
+    "axios cheerio": "*"
   },
   "engines": {
     "node": "20.x"
