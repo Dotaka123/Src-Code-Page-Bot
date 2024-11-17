@@ -47,7 +47,7 @@ module.exports = {
         `https://joshweb.click/api/gpt-4o?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${senderId}`
       );
       const data = response.data;
-      const messageText = data.response;
+      const messageText = data.result;
 
       // Envoyer le message texte
       await sendMessage(senderId, { text: messageText }, pageAccessToken);
