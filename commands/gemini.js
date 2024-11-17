@@ -12,8 +12,8 @@ module.exports = {
 
     try {
       sendMessage(senderId, {text: '...✍🏻'},pageAccessToken);
-      const { data } = await axios.get(`https://rest-api-production-5054.up.railway.app/google?prompt=${encodeURIComponent(prompt)}&model=gemini-1.5-flash&uid=${senderId}`);
-      sendMessage(senderId, { text: data.message }, pageAccessToken);
+      const { data } = await axios.get(`https://joshweb.click/new/gemini?prompt=${encodeURIComponent(prompt)}`);
+      sendMessage(senderId, { text: data.result.data }, pageAccessToken);
     } catch {
       sendMessage(senderId, { text: 'Error generating response. Try again later.' }, pageAccessToken);
     }
