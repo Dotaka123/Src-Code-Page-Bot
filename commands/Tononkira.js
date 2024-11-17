@@ -1,96 +1,66 @@
 const axios = require('axios');
-const cheerio = require('cheerio');
 const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
+const {
+  search,
+  searchByTitle,
+  searchByArtist,
+  searchByLyrics,
+  getLyricsByUrl,
+} = require('./lyricsModule'); // Assurez-vous que ce fichier contient le code importé
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'tononkira',
-  description: 'Recherche des paroles de chansons malgaches',
+  description: 'Rechercher des paroles de chansons en malgache',
   author: 'Tata',
 
   async execute(senderId, args) {
     const pageAccessToken = token;
     const query = args.join(' ').trim();
-    if (!query) {
-      await sendMessage(senderId, { text: 'Veuillez fournir le titre ou l\'artiste de la chanson.' }, pageAccessToken);
-      return;
-    }
 
-    const baseUrl = 'https://tononkira.serasera.org/tononkira';
+    // Vérifier si l'utilisateur a fourni un type de recherche (titre, artiste, ou paroles)
+    const searchType = query.startsWith('title:') ? 'title' :
+                      query.startsWith('artist:') ? 'artist' :
+                      query.startsWith('lyrics:') ? 'lyrics' : 'general';
 
-    // Fonction pour scraper la liste des chansons
-    async function scrapList(data) {
-      const resValue = [];
-      const rows = data.find('tbody tr');
-      rows.each((index, row) => {
-        const columns = cheerio(row).find('td');
-        resValue.push({
-          title: columns.eq(1).text(),
-          artist: columns.eq(2).text(),
-          url: columns.eq(1).find('a').attr('href')
-        });
-      });
-      return resValue;
-    }
-
-    // Fonction pour rechercher une chanson
-    async function searchSong(query) {
-      try {
-        const response = await axios.post(`${baseUrl}/hira/results`, null, {
-          params: { 'filter[tadiavo]': query }
-        });
-        const $ = cheerio.load(response.data);
-        const table = $('table.list');
-        if (!table.length) return [];
-        return scrapList(table);
-      } catch (error) {
-        console.error('Erreur lors de la recherche :', error);
-        return [];
-      }
-    }
-
-    // Fonction pour récupérer les paroles d'une chanson
-    async function fetchLyrics(url) {
-      try {
-        const response = await axios.get(url);
-        const $ = cheerio.load(response.data);
-        const title = $('h1').text();
-        const lyrics = [];
-        let isContent = false;
-
-        // Récupérer les paroles
-        $('div.adminbox').nextAll().each((_, el) => {
-          if (cheerio(el).is('div')) return false;
-          const text = cheerio(el).text();
-          if (text) lyrics.push(text.replace('tononkira.serasera.org', '').trim());
-        });
-
-        return `${title}\n-------------\n\n${lyrics.join('\n').trim()}`;
-      } catch (error) {
-        console.error('Erreur lors de la récupération des paroles :', error);
-        return 'Impossible de récupérer les paroles de la chanson.';
-      }
-    }
+    let results = [];
+    let responseMessage = '';
 
     try {
-      // Rechercher la chanson
-      const results = await searchSong(query);
-      if (results.length === 0) {
-        await sendMessage(senderId, { text: 'Aucun résultat trouvé.' }, pageAccessToken);
-        return;
+      if (searchType === 'title') {
+        const title = query.replace('title:', '').trim();
+        results = await searchByTitle(title);
+      } else if (searchType === 'artist') {
+        const artist = query.replace('artist:', '').trim();
+        results = await searchByArtist(artist);
+      } else if (searchType === 'lyrics') {
+        const lyrics = query.replace('lyrics:', '').trim();
+        results = await searchByLyrics(lyrics);
+      } else {
+        results = await search(query);
       }
 
-      // Récupérer les paroles de la meilleure correspondance
-      const songUrl = results[0].url ? `${baseUrl}${results[0].url}` : '';
-      const lyrics = await fetchLyrics(songUrl);
+      // Vérifier si des résultats ont été trouvés
+      if (results.length > 0) {
+        // Limiter le nombre de résultats affichés
+        const maxResults = 5;
+        responseMessage = `Voici les résultats pour "${query}":\n\n`;
 
-      // Envoyer les paroles
-      await sendMessage(senderId, { text: lyrics }, pageAccessToken);
+        results.slice(0, maxResults).forEach((item, index) => {
+          responseMessage += `${index + 1}. *${item.title}* par *${item.artist}*\n`;
+          responseMessage += `Lien: ${item.lyricsLink}\n\n`;
+        });
+
+        // Envoyer le message avec les résultats
+        await sendMessage(senderId, { text: responseMessage }, pageAccessToken);
+      } else {
+        await sendMessage(senderId, { text: 'Aucun résultat trouvé.' }, pageAccessToken);
+      }
     } catch (error) {
-      console.error('Erreur générale :', error);
-      await sendMessage(senderId, { text: 'Erreur lors de la recherche des paroles.' }, pageAccessToken);
+      console.error('Erreur lors de la recherche de paroles:', error);
+      await sendMessage(senderId, { text: 'Erreur lors de la recherche. Veuillez réessayer plus tard.' }, pageAccessToken);
     }
-  }
+  },
 };
