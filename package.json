@@ -21,7 +21,7 @@
     "hercai": "*",
     "optiic": "*",
     "weathers-watch": "*",
-    "axios cheerio": "*"
+    "cheerio": "*"
   },
   "engines": {
     "node": "20.x"
