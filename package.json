@@ -21,7 +21,8 @@
     "hercai": "*",
     "optiic": "*",
     "weathers-watch": "*",
-    "cheerio": "*"
+    "cheerio": "*",
+    "tonokira": "*"
   },
   "engines": {
     "node": "20.x"
