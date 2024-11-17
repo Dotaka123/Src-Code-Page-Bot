@@ -46,7 +46,6 @@ module.exports = {
       const response = await axios.get(
         `https://joshweb.click/api/gpt-4o?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${senderId}`
       );
-      const data = response.data;
       const messageText = data.result;
 
       // Envoyer le message texte
