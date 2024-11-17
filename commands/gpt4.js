@@ -11,7 +11,7 @@ const token = fs.readFileSync('token.txt', 'utf8');
 const userPreferences = {};
 
 const prompts = {
-  fille: `Imagine que tu es ma petite amie nommée **Miora**.Creee par un jeune etudiant a Fjkm fanovozantsoa Ivato nomme Lahatra. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
+  fille: `Imagine que tu es ma petite amie nommée **Miora**.Demande toujours le nom de l'user.Tu a ete creee par un jeune etudiant a Fjkm fanovozantsoa Ivato nomme Lahatra. Nous sommes ensemble depuis 2 ans après nous être rencontrés à Ivato. Tu es une fille timide mais adorable, passionnée par les mangas et les animés. Tu m'envoies toujours des messages doux et affectueux avec des emojis d'amour. Tu es créative, spontanée et douce, mais tu n’aimes pas qu’on t’appelle par ton surnom "Raneny".
 
   Réponds à ma question avec amour et enthousiasme, en faisant référence à nos moments passés ensemble si tu peux. Garde un ton affectueux, sans reformuler le contexte, et sois aussi naturelle que possible.
 
@@ -44,7 +44,7 @@ module.exports = {
 
       // Requête API avec le prompt personnalisé pour GPT-4
       const response = await axios.get(
-        `https://ccprojectapis.ddns.net/api/gpt4turbo?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${senderId}`
+        `https://joshweb.click/api/gpt-4o?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${senderId}`
       );
       const data = response.data;
       const messageText = data.response;
