@@ -1,66 +1,68 @@
-const axios = require('axios');
-const { sendMessage } = require('../handles/sendMessage');
+const { search, getLyricsByUrl } = require('tonokira'); // Assurez-vous d'avoir bien importé votre module
+const { sendMessage } = require('../handles/sendMessage'); // Votre fonction d'envoi de message
 const fs = require('fs');
-const {
-  search,
-  searchByTitle,
-  searchByArtist,
-  searchByLyrics,
-  getLyricsByUrl,
-} = require('./lyricsModule'); // Assurez-vous que ce fichier contient le code importé
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'tononkira',
-  description: 'Rechercher des paroles de chansons en malgache',
+  description: 'Rechercher des chansons malagasy par titre, artiste ou paroles.',
   author: 'Tata',
 
   async execute(senderId, args) {
     const pageAccessToken = token;
     const query = args.join(' ').trim();
 
-    // Vérifier si l'utilisateur a fourni un type de recherche (titre, artiste, ou paroles)
-    const searchType = query.startsWith('title:') ? 'title' :
-                      query.startsWith('artist:') ? 'artist' :
-                      query.startsWith('lyrics:') ? 'lyrics' : 'general';
-
-    let results = [];
-    let responseMessage = '';
+    // Vérification si une requête a été fournie
+    if (!query) {
+      await sendMessage(senderId, { text: 'Veuillez fournir un titre, un artiste ou des paroles à rechercher.' }, pageAccessToken);
+      return;
+    }
 
     try {
-      if (searchType === 'title') {
-        const title = query.replace('title:', '').trim();
-        results = await searchByTitle(title);
-      } else if (searchType === 'artist') {
-        const artist = query.replace('artist:', '').trim();
-        results = await searchByArtist(artist);
-      } else if (searchType === 'lyrics') {
-        const lyrics = query.replace('lyrics:', '').trim();
-        results = await searchByLyrics(lyrics);
-      } else {
-        results = await search(query);
+      // Recherche des chansons en utilisant votre méthode de recherche
+      const results = await search(query);
+
+      // Si aucun résultat n'est trouvé
+      if (results.length === 0) {
+        await sendMessage(senderId, { text: `Aucun résultat trouvé pour : "${query}".` }, pageAccessToken);
+        return;
       }
 
-      // Vérifier si des résultats ont été trouvés
-      if (results.length > 0) {
-        // Limiter le nombre de résultats affichés
-        const maxResults = 5;
-        responseMessage = `Voici les résultats pour "${query}":\n\n`;
+      // Formater la réponse avec les chansons trouvées
+      let formattedMessage = '🎵 Résultats de recherche :\n';
+      results.forEach((song, index) => {
+        formattedMessage += `${index + 1}. *${song.title}* par *${song.artist}*\n`;
+      });
+      formattedMessage += '\nVeuillez répondre avec le numéro de la chanson pour voir les paroles.';
 
-        results.slice(0, maxResults).forEach((item, index) => {
-          responseMessage += `${index + 1}. *${item.title}* par *${item.artist}*\n`;
-          responseMessage += `Lien: ${item.lyricsLink}\n\n`;
-        });
+      // Envoyer la liste des résultats
+      await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
 
-        // Envoyer le message avec les résultats
-        await sendMessage(senderId, { text: responseMessage }, pageAccessToken);
-      } else {
-        await sendMessage(senderId, { text: 'Aucun résultat trouvé.' }, pageAccessToken);
-      }
+      // Attendre la réponse de l'utilisateur
+      const handleUserResponse = async (userResponse) => {
+        const selectedIndex = parseInt(userResponse.trim(), 10) - 1;
+
+        // Vérifier si la réponse de l'utilisateur est valide
+        if (isNaN(selectedIndex) || selectedIndex < 0 || selectedIndex >= results.length) {
+          await sendMessage(senderId, { text: 'Numéro invalide. Veuillez essayer à nouveau.' }, pageAccessToken);
+          return;
+        }
+
+        // Récupérer les paroles de la chanson sélectionnée
+        const selectedSong = results[selectedIndex];
+        const lyrics = await getLyricsByUrl(selectedSong.lyricsLink);
+
+        const lyricsMessage = `🎶 *${selectedSong.title}* par *${selectedSong.artist}*\n\n${lyrics}`;
+        await sendMessage(senderId, { text: lyricsMessage }, pageAccessToken);
+      };
+
+      // Ajouter un listener pour recevoir la réponse utilisateur (simulateur d'événements pour votre bot)
+      global.onUserResponse = handleUserResponse;
+
     } catch (error) {
-      console.error('Erreur lors de la recherche de paroles:', error);
-      await sendMessage(senderId, { text: 'Erreur lors de la recherche. Veuillez réessayer plus tard.' }, pageAccessToken);
+      console.error('Erreur lors de la recherche des chansons:', error);
+      await sendMessage(senderId, { text: 'Désolé, une erreur est survenue lors de la recherche.' }, pageAccessToken);
     }
-  },
+  }
 };
