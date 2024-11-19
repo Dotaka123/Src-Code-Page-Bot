@@ -12,34 +12,34 @@ module.exports = {
   async execute(senderId, args) {
     const pageAccessToken = token;
 
-    // Commande de base : Vérifier si un argument est fourni
     if (args.length === 0) {
-      await sendMessage(senderId, { text: 'Veuillez utiliser les commandes suivantes :\n\n- `!manga <titre>` : Rechercher un manga\n- `!manga lire <chapitre>` : Lire un chapitre spécifique\n\nExemple : `!manga One Piece`' }, pageAccessToken);
+      await sendMessage(senderId, {
+        text: 'Veuillez utiliser les commandes suivantes :\n\n- `!manga <titre>` : Rechercher un manga\n- `!manga lire <numéro>` : Lire un chapitre spécifique\n\nExemple : `!manga One Piece`',
+      }, pageAccessToken);
       return;
     }
 
-    // Déterminer si l'utilisateur veut lire un chapitre ou rechercher un manga
     const command = args[0].toLowerCase();
-    if (command === 'lire' && args.length > 1) {
+    if (command === 'lire' && args.length > 2) {
       const chapterNumber = args[1];
-      await this.readChapter(senderId, chapterNumber, pageAccessToken);
+      const mangaId = args[2]; // ID du manga passé comme argument
+      await this.readChapter(senderId, chapterNumber, mangaId, pageAccessToken);
       return;
     }
 
-    // Si ce n'est pas "lire", effectuer une recherche
     const query = args.join(' ').trim();
     if (!query) {
-      await sendMessage(senderId, { text: 'Veuillez entrer le nom d\'un manga pour le rechercher. Exemple : `!manga Naruto`' }, pageAccessToken);
+      await sendMessage(senderId, { text: 'Veuillez entrer le nom d\'un manga pour le rechercher.' }, pageAccessToken);
       return;
     }
 
     try {
-      // Étape 1 : Rechercher le manga
-      const searchResponse = await axios.get(`https://api.mangadex.org/manga`, {
+      // Rechercher le manga
+      const searchResponse = await axios.get('https://api.mangadex.org/manga', {
         params: {
           title: query,
-          limit: 1
-        }
+          limit: 1,
+        },
       });
 
       if (searchResponse.data.data.length === 0) {
@@ -51,64 +51,63 @@ module.exports = {
       const mangaTitle = manga.attributes.title.en || manga.attributes.title.jp;
       const mangaId = manga.id;
 
-      // Étape 2 : Obtenir les chapitres du manga
+      // Obtenir les chapitres
       const chaptersResponse = await axios.get(`https://api.mangadex.org/manga/${mangaId}/feed`, {
         params: {
           translatedLanguage: ['en'],
           order: { chapter: 'asc' },
-          limit: 5
-        }
+          limit: 5,
+        },
       });
 
       const chapters = chaptersResponse.data.data;
       if (chapters.length === 0) {
-        await sendMessage(senderId, { text: `Aucun chapitre trouvé pour "${mangaTitle}".` }, pageAccessToken);
+        await sendMessage(senderId, { text: `Aucun chapitre disponible pour "${mangaTitle}".` }, pageAccessToken);
         return;
       }
 
-      // Construire la liste des chapitres disponibles
+      // Construire la liste des chapitres
       let chapterList = `📖 Voici les chapitres disponibles pour ${mangaTitle} :\n\n`;
       chapters.forEach((chapter, index) => {
         const chapterNumber = chapter.attributes.chapter || 'N/A';
-        chapterList += `${index + 1}. Chapitre ${chapterNumber}\n`;
+        chapterList += `${index + 1}. Chapitre ${chapterNumber} (ID: ${mangaId})\n`;
       });
-      chapterList += '\nVeuillez entrer `!manga lire <numéro du chapitre>` pour lire un chapitre.';
+      chapterList += '\nPour lire un chapitre, utilisez la commande : `!manga lire <numéro> <ID>`';
 
       await sendMessage(senderId, { text: chapterList }, pageAccessToken);
-
     } catch (error) {
       console.error('Erreur lors de la recherche de manga:', error.message);
-      await sendMessage(senderId, { text: 'Une erreur est survenue lors de la recherche du manga. Veuillez réessayer plus tard.' }, pageAccessToken);
+      await sendMessage(senderId, { text: 'Une erreur est survenue lors de la recherche. Veuillez réessayer plus tard.' }, pageAccessToken);
     }
   },
 
-  // Fonction pour lire un chapitre
-  async readChapter(senderId, chapterNumber, pageAccessToken) {
+  async readChapter(senderId, chapterNumber, mangaId, pageAccessToken) {
     try {
-      // Rechercher le chapitre spécifique
-      const response = await axios.get(`https://api.mangadex.org/chapter`, {
+      const response = await axios.get(`https://api.mangadex.org/manga/${mangaId}/feed`, {
         params: {
-          chapter: chapterNumber,
-          translatedLanguage: ['en']
-        }
+          translatedLanguage: ['en'],
+          order: { chapter: 'asc' },
+          limit: 100,
+        },
       });
 
       const chapters = response.data.data;
-      if (chapters.length === 0) {
-        await sendMessage(senderId, { text: `Chapitre ${chapterNumber} introuvable.` }, pageAccessToken);
+      const chapter = chapters.find(ch => ch.attributes.chapter === chapterNumber);
+
+      if (!chapter) {
+        await sendMessage(senderId, { text: `Chapitre ${chapterNumber} introuvable pour ce manga.` }, pageAccessToken);
         return;
       }
 
-      const chapter = chapters[0];
       const pages = chapter.attributes.data;
       const baseUrl = `https://uploads.mangadex.org/data/${chapter.attributes.hash}/`;
 
-      // Envoyer un message avec la première page
-      await sendMessage(senderId, { text: `📖 Voici la première page du chapitre ${chapterNumber} : ${baseUrl}${pages[0]}` }, pageAccessToken);
-
+      await sendMessage(senderId, {
+        text: `📖 Voici la première page du chapitre ${chapterNumber} : ${baseUrl}${pages[0]}`,
+      }, pageAccessToken);
     } catch (error) {
       console.error('Erreur lors de la lecture du chapitre:', error.message);
       await sendMessage(senderId, { text: 'Impossible de lire ce chapitre. Vérifiez le numéro et réessayez.' }, pageAccessToken);
     }
-  }
+  },
 };
