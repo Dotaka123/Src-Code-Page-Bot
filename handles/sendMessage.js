@@ -6,7 +6,7 @@ const TYPING_ON = 'typing_on';
 const TYPING_OFF = 'typing_off';
 
 // Helper function for POST requests
-const axiosPost = (url, data, params = {}) => 
+const axiosPost = (url, data, params = {}) =>
   axios.post(url, data, { params }).then((res) => res.data);
 
 // Helper function to check if a URL is valid
@@ -19,30 +19,12 @@ const isValidUrl = (url) => {
   }
 };
 
-// Create message payload
-const createMessagePayload = (senderId, text, attachment, quickReplies) => {
-  const messagePayload = {
-    recipient: { id: senderId },
-    message: {},
-  };
-
-  if (text) {
-    messagePayload.message.text = text;
-  }
-
-  if (attachment) {
-    messagePayload.message.attachment = attachment;
-  }
-
-  if (quickReplies) {
-    messagePayload.message.quick_replies = quickReplies;
-  }
-
-  return messagePayload;
-};
-
 // Send a message with typing indicators
-const sendMessage = async (senderId, { text = '', buttons = null, attachment = null, quickReplies = null }, pageAccessToken) => {
+const sendMessage = async (
+  senderId,
+  { text = '', buttons = null, attachment = null, quickReplies = null },
+  pageAccessToken
+) => {
   if (!text && !attachment && !buttons && !quickReplies) return;
 
   const params = { access_token: pageAccessToken };
@@ -54,6 +36,11 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
     let messagePayload;
 
     if (buttons) {
+      // Vérifie la limite de 3 boutons maximum
+      if (buttons.length > 3) {
+        throw new Error('Meta API limitation: A maximum of 3 buttons is allowed.');
+      }
+
       // Buttons template
       messagePayload = {
         recipient: { id: senderId },
@@ -83,10 +70,16 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
         throw new Error('Invalid attachment URL.');
       }
 
-      messagePayload = createMessagePayload(senderId, text, attachment);
+      messagePayload = {
+        recipient: { id: senderId },
+        message: { attachment },
+      };
     } else {
       // Standard text message
-      messagePayload = createMessagePayload(senderId, text);
+      messagePayload = {
+        recipient: { id: senderId },
+        message: { text },
+      };
     }
 
     // Send the message
