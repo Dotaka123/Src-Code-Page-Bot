@@ -4,10 +4,10 @@ const path = require('path');
 const MESSAGE_URL = 'https://graph.facebook.com/v21.0/me/messages';
 const TYPING_ON = 'typing_on';
 const TYPING_OFF = 'typing_off';
-const WELCOME_MESSAGE = 'Bienvenue sur notre bot ! \n Envoyez [help] pour voir les commandes du bot.';
+const WELCOME_MESSAGE = 'Bienvenue sur notre bot ! \nEnvoyez [help] pour voir les commandes du bot.';
 
 // Helper function for POST requests
-const axiosPost = (url, data, params = {}) => 
+const axiosPost = (url, data, params = {}) =>
   axios.post(url, data, { params }).then(res => res.data);
 
 // Function to create message payload
@@ -31,7 +31,7 @@ const createMessagePayload = (senderId, text, attachment, quickReplies) => {
   return messagePayload;
 };
 
-// Send a message with typing indicators
+// Function to send a message with typing indicators
 const sendMessage = async (senderId, { text = '', buttons = null, attachment = null, quickReplies = null }, pageAccessToken) => {
   if (!text && !attachment && !buttons && !quickReplies) return;
 
@@ -41,9 +41,11 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
     // Envoie l'indicateur de saisie
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_ON }, params);
 
-    // Construction du payload pour les boutons ou les quick replies
     let messagePayload;
+
     if (buttons) {
+      // Limiter les boutons à 3 (restriction de Messenger)
+      const limitedButtons = buttons.slice(0, 3);
       messagePayload = {
         recipient: { id: senderId },
         message: {
@@ -52,10 +54,10 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
             payload: {
               template_type: 'button',
               text: text,
-              buttons: buttons
-            }
-          }
-        }
+              buttons: limitedButtons,
+            },
+          },
+        },
       };
     } else if (quickReplies) {
       // Payload pour les quick replies
@@ -63,16 +65,21 @@ const sendMessage = async (senderId, { text = '', buttons = null, attachment = n
         recipient: { id: senderId },
         message: {
           text: text,
-          quick_replies: quickReplies
-        }
+          quick_replies: quickReplies,
+        },
       };
-    } else {
-      // Payload classique pour un message texte ou une pièce jointe
+    } else if (attachment) {
+      // Payload pour une pièce jointe
       messagePayload = createMessagePayload(senderId, text, attachment);
+    } else {
+      // Message texte simple
+      messagePayload = createMessagePayload(senderId, text);
     }
 
     // Envoie le message
     await axiosPost(MESSAGE_URL, messagePayload, params);
+
+    // Désactive l'indicateur de saisie
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_OFF }, params);
   } catch (e) {
     const errorMessage = e.response?.data?.error?.message || e.message;
