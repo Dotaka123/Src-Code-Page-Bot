@@ -1,3 +1,4 @@
+dule.exports = { sendMessage };
 const axios = require('axios');
 const path = require('path');
 
@@ -6,42 +7,43 @@ const TYPING_ON = 'typing_on';
 const TYPING_OFF = 'typing_off';
 
 // Helper function for POST requests
-const axiosPost = (url, data, params = {}) =>
-  axios.post(url, data, { params }).then((res) => res.data);
+const axiosPost = (url, data, params = {}) => 
+  axios.post(url, data, { params }).then(res => res.data);
 
-// Helper function to check if a URL is valid
-const isValidUrl = (url) => {
-  try {
-    new URL(url);
-    return true;
-  } catch {
-    return false;
+// Function to create message payload
+const createMessagePayload = (senderId, text, attachment, quickReplies) => {
+  const messagePayload = {
+    recipient: { id: senderId },
+    message: {},
+  };
+
+  if (text && !attachment) {
+    messagePayload.message.text = text;
+  } else if (attachment) {
+    messagePayload.message.attachment = attachment;
   }
+
+  // Ajout des quick replies si fournis
+  if (quickReplies) {
+    messagePayload.message.quick_replies = quickReplies;
+  }
+
+  return messagePayload;
 };
 
 // Send a message with typing indicators
-const sendMessage = async (
-  senderId,
-  { text = '', buttons = null, attachment = null, quickReplies = null },
-  pageAccessToken
-) => {
+const sendMessage = async (senderId, { text = '', buttons = null, attachment = null, quickReplies = null }, pageAccessToken) => {
   if (!text && !attachment && !buttons && !quickReplies) return;
 
   const params = { access_token: pageAccessToken };
 
   try {
-    // Indicate typing on
+    // Envoie l'indicateur de saisie
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_ON }, params);
 
+    // Construction du payload pour les boutons ou les quick replies
     let messagePayload;
-
-    if (buttons) {
-      // Vérifie la limite de 3 boutons maximum
-      if (buttons.length > 3) {
-        throw new Error('Meta API limitation: A maximum of 3 buttons is allowed.');
-      }
-
-      // Buttons template
+    if (buttons && buttons.length <= 3) {  // Limiter à 3 boutons
       messagePayload = {
         recipient: { id: senderId },
         message: {
@@ -49,43 +51,42 @@ const sendMessage = async (
             type: 'template',
             payload: {
               template_type: 'button',
-              text,
-              buttons,
-            },
-          },
-        },
+              text: text,
+              buttons: buttons
+            }
+          }
+        }
       };
     } else if (quickReplies) {
-      // Quick replies
+      // Payload pour les quick replies
       messagePayload = {
         recipient: { id: senderId },
         message: {
-          text,
-          quick_replies: quickReplies,
-        },
+          text: text,
+          quick_replies: quickReplies
+        }
       };
     } else if (attachment) {
-      // Validate the attachment URL
-      if (!isValidUrl(attachment.payload.url)) {
-        throw new Error('Invalid attachment URL.');
-      }
-
+      // Payload pour les images
       messagePayload = {
         recipient: { id: senderId },
-        message: { attachment },
+        message: {
+          attachment: {
+            type: 'image',
+            payload: {
+              url: attachment.url,  // L'URL de l'image
+              is_reusable: true      // Réutiliser l'image
+            }
+          }
+        }
       };
     } else {
-      // Standard text message
-      messagePayload = {
-        recipient: { id: senderId },
-        message: { text },
-      };
+      // Payload classique pour un message texte
+      messagePayload = createMessagePayload(senderId, text, attachment);
     }
 
-    // Send the message
+    // Envoie le message
     await axiosPost(MESSAGE_URL, messagePayload, params);
-
-    // Indicate typing off
     await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_OFF }, params);
   } catch (e) {
     const errorMessage = e.response?.data?.error?.message || e.message;
