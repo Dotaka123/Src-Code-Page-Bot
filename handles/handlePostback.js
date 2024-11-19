@@ -65,34 +65,13 @@ const handlePostback = async (event, pageAccessToken) => {
         },
       ];
 
-      const quickReplies = [
-        {
-          content_type: 'text',
-          title: 'Gpt4',
-          payload: 'GPT4',
-        },
-        {
-          content_type: 'text',
-          title: 'Hercai',
-          payload: 'HERCAI',
-        },
-      ];
-
-      await sendMessage(senderId, { text: welcomeMessage, buttons, quick_replies: quickReplies }, pageAccessToken);
+      await sendMessage(senderId, { text: welcomeMessage, buttons }, pageAccessToken);
     } else if (payload === 'MODE_FILLE') {
       setUserMode(senderId, 'fille');
       await sendMessage(senderId, { text: 'Mode fille activé ! 💕 Parlez avec Miora !' }, pageAccessToken);
     } else if (payload === 'MODE_GARCON') {
       setUserMode(senderId, 'garcon');
       await sendMessage(senderId, { text: 'Mode garçon activé ! 💙 Parlez avec Nario !' }, pageAccessToken);
-    } else if (payload === 'GPT4') {
-      console.log('Quick Reply "Gpt4" sélectionné');
-      userDefaults.set(senderId, 'gpt4');
-      await sendMessage(senderId, { text: 'Mode GPT-4 activé ! 🧠' }, pageAccessToken);
-    } else if (payload === 'HERCAI') {
-      console.log('Quick Reply "Hercai" sélectionné');
-      userDefaults.set(senderId, 'hercai');
-      await sendMessage(senderId, { text: 'Mode Hercai activé ! 🎭' }, pageAccessToken);
     } else if (payload.startsWith('MANGA_SELECT_')) {
       const mangaId = payload.split('_')[2];
 
@@ -134,26 +113,6 @@ const handlePostback = async (event, pageAccessToken) => {
       } catch (error) {
         console.error('Erreur lors de l\'envoi des images du chapitre:', error.message);
         await sendMessage(senderId, { text: 'Une erreur est survenue lors de l\'envoi des images.' }, pageAccessToken);
-      }
-    } else if (payload.startsWith('LISTEN_AUDIO_')) {
-      const videoId = payload.split('_')[2];
-      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=128`;
-
-      try {
-        sendMessage(senderId, { text: 'Téléchargement de l\'audio en cours...' }, pageAccessToken);
-        const downloadResponse = await axios.get(downloadUrl);
-        const audioUrl = downloadResponse.data.audio;
-
-        if (audioUrl) {
-          await sendMessage(senderId, {
-            attachment: { type: 'audio', payload: { url: audioUrl } },
-          }, pageAccessToken);
-        } else {
-          await sendMessage(senderId, { text: 'Impossible de récupérer l\'audio.' }, pageAccessToken);
-        }
-      } catch (error) {
-        console.error('Erreur lors du téléchargement de l\'audio:', error.message);
-        await sendMessage(senderId, { text: 'Erreur lors du téléchargement de l\'audio.' }, pageAccessToken);
       }
     } else {
       await sendMessage(senderId, { text: `Postback inconnu : ${payload}` }, pageAccessToken);
