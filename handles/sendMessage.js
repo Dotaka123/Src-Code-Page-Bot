@@ -4,97 +4,102 @@ const path = require('path');
 const MESSAGE_URL = 'https://graph.facebook.com/v21.0/me/messages';
 const TYPING_ON = 'typing_on';
 const TYPING_OFF = 'typing_off';
+const TEXT_LIMIT = 2000; // Limite maximale pour le texte
 
-// Helper function for POST requests
-const axiosPost = (url, data, params = {}) => 
-  axios.post(url, data, { params }).then(res => res.data);
-
-// Function to create message payload
-const createMessagePayload = (senderId, text, attachment, quickReplies) => {
-  const messagePayload = {
-    recipient: { id: senderId },
-    message: {},
-  };
-
-  if (text && !attachment) {
-    messagePayload.message.text = text;
-  } else if (attachment) {
-    messagePayload.message.attachment = attachment;
+// Fonction auxiliaire pour les requêtes POST
+const axiosPost = async (url, data, params = {}) => {
+  try {
+    const response = await axios.post(url, data, { params });
+    return response.data;
+  } catch (error) {
+    console.error(`Error in axiosPost: ${error.response?.data?.error?.message || error.message}`);
+    throw error;
   }
+};
 
-  // Ajout des quick replies si fournis
-  if (quickReplies) {
+// Afficher un indicateur de saisie
+const sendTypingIndicator = async (senderId, action, pageAccessToken) => {
+  const params = { access_token: pageAccessToken };
+  await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: action }, params);
+};
+
+// Découpe un texte long en plusieurs messages
+const splitText = (text) => {
+  const chunks = [];
+  while (text.length > TEXT_LIMIT) {
+    const chunk = text.slice(0, TEXT_LIMIT);
+    chunks.push(chunk);
+    text = text.slice(TEXT_LIMIT);
+  }
+  if (text.length > 0) {
+    chunks.push(text);
+  }
+  return chunks;
+};
+
+// Crée les payloads de message
+const createMessagePayload = (senderId, text, attachment, buttons, quickReplies) => {
+  const messagePayload = { recipient: { id: senderId }, message: {} };
+
+  if (attachment) {
+    messagePayload.message.attachment = {
+      type: attachment.type,
+      payload: {
+        url: attachment.url,
+        is_reusable: true,
+      },
+    };
+  } else if (buttons) {
+    if (buttons.length > 3) {
+      throw new Error('Too many buttons: Maximum allowed is 3.');
+    }
+    messagePayload.message.attachment = {
+      type: 'template',
+      payload: {
+        template_type: 'button',
+        text: text,
+        buttons: buttons,
+      },
+    };
+  } else if (quickReplies) {
+    messagePayload.message.text = text;
     messagePayload.message.quick_replies = quickReplies;
+  } else if (text) {
+    messagePayload.message.text = text;
+  } else {
+    throw new Error('No valid message payload provided.');
   }
 
   return messagePayload;
 };
 
-// Send a message with typing indicators
-const sendMessage = async (senderId, { text = '', buttons = null, attachment = null, quickReplies = null }, pageAccessToken) => {
-  if (!text && !attachment && !buttons && !quickReplies) return;
+// Envoi du message
+const sendMessage = async (
+  senderId,
+  { text = '', attachment = null, buttons = null, quickReplies = null },
+  pageAccessToken
+) => {
+  if (!text && !attachment && !buttons && !quickReplies) {
+    console.error('No message content provided.');
+    return;
+  }
 
   const params = { access_token: pageAccessToken };
 
   try {
-    // Envoie l'indicateur de saisie
-    await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_ON }, params);
+    // Affiche l'indicateur "typing"
+    await sendTypingIndicator(senderId, TYPING_ON, pageAccessToken);
 
-    // Construction du payload pour les boutons ou les quick replies
-    let messagePayload;
-    if (buttons && buttons.length <= 3) {  // Limiter à 3 boutons
-      messagePayload = {
-        recipient: { id: senderId },
-        message: {
-          attachment: {
-            type: 'template',
-            payload: {
-              template_type: 'button',
-              text: text,
-              buttons: buttons
-            }
-          }
-        }
-      };
-    } else if (quickReplies) {
-      // Payload pour les quick replies
-      messagePayload = {
-        recipient: { id: senderId },
-        message: {
-          text: text,
-          quick_replies: quickReplies
-        }
-      };
-    } else if (attachment) {
-      // Payload pour les images
-      messagePayload = {
-        recipient: { id: senderId },
-        message: {
-          attachment: {
-            type: 'image',
-            payload: {
-              url: attachment.url,  // L'URL de l'image
-              is_reusable: true      // Réutiliser l'image
-            }
-          }
-        }
-      };
-    } else {
-      // Payload classique pour un message texte
-      messagePayload = createMessagePayload(senderId, text, attachment);
+    // Gestion des textes longs : découpage automatique
+    const textChunks = text ? splitText(text) : [];
+
+    // Envoi des messages texte découpés
+    for (const chunk of textChunks) {
+      const messagePayload = createMessagePayload(senderId, chunk, null, null, null);
+      await axiosPost(MESSAGE_URL, messagePayload, params);
     }
 
-    // Envoie le message
-    await axiosPost(MESSAGE_URL, messagePayload, params);
-    await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: TYPING_OFF }, params);
-  } catch (e) {
-    const errorMessage = e.response?.data?.error?.message || e.message;
-    console.error(`Error in ${path.basename(__filename)}: ${errorMessage}`);
-    await axiosPost(MESSAGE_URL, {
-      recipient: { id: senderId },
-      message: { text: 'An error occurred while sending your message. Please try again.' },
-    }, params);
-  }
-};
-
-module.exports = { sendMessage };
+    // Envoi du message avec pièce jointe, boutons ou quick replies
+    if (attachment || buttons || quickReplies) {
+      const messagePayload = createMessagePayload(senderId, text, attachment, buttons, quickReplies);
+      await axiosPost(MESSAGE
