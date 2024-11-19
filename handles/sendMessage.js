@@ -102,4 +102,25 @@ const sendMessage = async (
     // Envoi du message avec pièce jointe, boutons ou quick replies
     if (attachment || buttons || quickReplies) {
       const messagePayload = createMessagePayload(senderId, text, attachment, buttons, quickReplies);
-      await axiosPost(MESSAGE
+      await axiosPost(MESSAGE_URL, messagePayload, params);
+    }
+
+    // Désactive l'indicateur "typing"
+    await sendTypingIndicator(senderId, TYPING_OFF, pageAccessToken);
+  } catch (error) {
+    const errorMessage = error.response?.data?.error?.message || error.message;
+    console.error(`Error in ${path.basename(__filename)}: ${errorMessage}`);
+
+    // Message d'erreur utilisateur
+    await axiosPost(
+      MESSAGE_URL,
+      {
+        recipient: { id: senderId },
+        message: { text: 'An error occurred while sending your message. Please try again.' },
+      },
+      params
+    );
+  }
+};
+
+module.exports = { sendMessage };
