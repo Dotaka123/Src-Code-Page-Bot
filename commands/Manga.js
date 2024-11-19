@@ -1,7 +1,6 @@
 const axios = require('axios');
 const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
-
 const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
@@ -91,12 +90,30 @@ module.exports = {
       const { baseUrl, chapter } = response.data;
       const pages = chapter.data;
 
-      // Étape 2 : Construire l'URL de la première page
-      const firstPageUrl = `${baseUrl}/data/${chapter.hash}/${pages[0]}`;
+      // Étape 2 : Télécharger et envoyer toutes les pages
+      for (let i = 0; i < pages.length; i++) {
+        const pageUrl = `${baseUrl}/data/${chapter.hash}/${pages[i]}`;
+        try {
+          // Téléchargement de l'image
+          const imageResponse = await axios.get(pageUrl, { responseType: 'arraybuffer' });
+          
+          // Envoi de l'image via l'API Messenger
+          const imageBuffer = Buffer.from(imageResponse.data, 'binary');
+          const imageAttachment = {
+            type: 'image',
+            payload: {
+              url: `data:image/png;base64,${imageBuffer.toString('base64')}`,
+              is_reusable: true,
+            },
+          };
 
-      await sendMessage(senderId, {
-        text: `📖 Voici la première page du chapitre : ${firstPageUrl}\n\nPour voir d'autres pages, ouvrez l'URL dans votre navigateur.`,
-      }, pageAccessToken);
+          await sendMessage(senderId, { attachment: imageAttachment }, pageAccessToken);
+        } catch (error) {
+          console.error('Erreur lors de l\'envoi de l\'image:', error.message);
+          await sendMessage(senderId, { text: 'Erreur lors du chargement d\'une page. Veuillez réessayer plus tard.' }, pageAccessToken);
+        }
+      }
+
     } catch (error) {
       console.error('Erreur lors de la lecture du chapitre:', error.message);
       await sendMessage(senderId, { text: 'Impossible de lire ce chapitre. Vérifiez l\'ID et réessayez.' }, pageAccessToken);
