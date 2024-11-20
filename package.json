@@ -22,7 +22,8 @@
     "optiic": "*",
     "weathers-watch": "*",
     "cheerio": "*",
-    "tonokira": "*"
+    "tonokira": "*",
+    "matplotlib": "*"
   },
   "engines": {
     "node": "20.x"
