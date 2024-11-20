@@ -44,10 +44,10 @@ module.exports = {
 
       // Requête API avec le prompt personnalisé pour GPT-4
       const response = await axios.get(
-        `https://joshweb.click/api/gpt-4o?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${senderId}`
+        `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${senderId}`
       );
       const data= response.data
-      const messageText = data.result;
+      const messageText = data.response;
 
       // Envoyer le message texte
       await sendMessage(senderId, { text: messageText }, pageAccessToken);
