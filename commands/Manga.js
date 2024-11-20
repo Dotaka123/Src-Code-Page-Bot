@@ -3,21 +3,35 @@ const fs = require('fs');
 const { sendMessage } = require('../handles/sendMessage');
 
 const token = fs.readFileSync('token.txt', 'utf8');
-let cachedChapters = []; // Cache des chapitres disponibles pour une recherche récente
+let cachedChapters = []; // Stocke les chapitres récupérés après une recherche
+
+// Fonction pour rechercher un manga par titre
+const searchMangaByTitle = async (title) => {
+  try {
+    const response = await axios.get('https://api.mangadex.org/manga', {
+      params: { title, limit: 5 },
+    });
+    return response.data.data.map((manga) => ({
+      id: manga.id,
+      title: manga.attributes.title.en || 'Sans titre',
+    }));
+  } catch (error) {
+    console.error('Erreur lors de la recherche de manga:', error.message);
+    throw new Error('Impossible de trouver des mangas correspondant à ce titre.');
+  }
+};
 
 // Fonction pour récupérer les chapitres d'un manga
 const getMangaChapters = async (mangaId) => {
   try {
     const response = await axios.get(`https://api.mangadex.org/manga/${mangaId}/feed`, {
-      params: { limit: 10, translatedLanguage: ['en'] },
+      params: { limit: 5, translatedLanguage: ['en'] },
     });
-    const chapters = response.data.data.map((chapter) => ({
+    return response.data.data.map((chapter) => ({
       id: chapter.id,
       title: chapter.attributes.title || 'Sans titre',
       chapterNumber: chapter.attributes.chapter || 'Inconnu',
     }));
-    cachedChapters = chapters; // Mise en cache
-    return chapters;
   } catch (error) {
     console.error('Erreur lors de la récupération des chapitres:', error.message);
     throw new Error('Impossible de récupérer les chapitres.');
@@ -39,7 +53,7 @@ const getMangaChapterImages = async (chapterId) => {
 
 module.exports = {
   name: 'manga',
-  description: 'Lire un manga ou un chapitre spécifique',
+  description: 'Recherche et lecture de mangas',
   author: 'Tata',
 
   async execute(senderId, args) {
@@ -48,7 +62,7 @@ module.exports = {
     if (args.length === 0) {
       await sendMessage(
         senderId,
-        { text: 'Utilisation : `!manga <mangaId>` pour rechercher un manga ou `!manga lire <numéro>` pour lire un chapitre.' },
+        { text: 'Utilisation : `!manga <titre>` pour rechercher un manga ou `!manga lire <numéro>` pour lire un chapitre.' },
         pageAccessToken
       );
       return;
@@ -105,11 +119,25 @@ module.exports = {
         );
       }
     } else {
-      // Rechercher un manga et lister les chapitres
-      const mangaId = args[0];
+      // Rechercher un manga par titre et lister ses chapitres
+      const title = args.join(' ');
 
       try {
-        const chapters = await getMangaChapters(mangaId);
+        const mangas = await searchMangaByTitle(title);
+
+        if (mangas.length === 0) {
+          await sendMessage(
+            senderId,
+            { text: `Aucun manga trouvé pour le titre "${title}".` },
+            pageAccessToken
+          );
+          return;
+        }
+
+        const manga = mangas[0]; // On prend le premier résultat
+        const chapters = await getMangaChapters(manga.id);
+
+        cachedChapters = chapters; // Stocke les chapitres dans le cache
 
         const chapterList = chapters
           .map((ch, index) => `${index + 1}. Chapitre ${ch.chapterNumber} - ${ch.title}`)
@@ -117,7 +145,7 @@ module.exports = {
 
         await sendMessage(
           senderId,
-          { text: `Voici les chapitres disponibles :\n\n${chapterList}\n\nEnvoyez \`!manga lire <numéro>\` pour lire un chapitre.` },
+          { text: `Manga trouvé : ${manga.title}\n\nChapitres disponibles :\n${chapterList}\n\nEnvoyez \`!manga lire <numéro>\` pour lire un chapitre.` },
           pageAccessToken
         );
       } catch (error) {
