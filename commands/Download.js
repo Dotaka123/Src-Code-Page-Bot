@@ -3,37 +3,36 @@ const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
 
 const token = fs.readFileSync('token.txt', 'utf8');
+const adminId = '100039040104071';  // Remplace par l'ID de l'admin
 
 module.exports = {
-  name: 'download',
-  description: 'Download audio from a YouTube video and send it as a voice message',
+  name: 'admin',
+  description: 'Envoyer un message anonyme à l\'admin',
   author: 'Tata',
+
 
   async execute(senderId, args) {
     const pageAccessToken = token;
-    const videoUrl = args[0]; // On attend que l'utilisateur fournisse le lien de la vidéo
+    const message = args.join(' ').trim();
 
-    if (!videoUrl || !videoUrl.includes('youtube.com') && !videoUrl.includes('youtu.be')) {
-      await sendMessage(senderId, { text: "Veuillez fournir un lien valide de vidéo YouTube." }, pageAccessToken);
+    // Vérifier si l'utilisateur a bien envoyé un message
+    if (!message) {
+      await sendMessage(senderId, { text: 'Tu dois écrire un message avant de l\'envoyer à l\'admin.' }, pageAccessToken);
       return;
     }
 
     try {
-      // Étape 1: Télécharger l'audio de la vidéo
-      const downloadResponse = await axios.get(`https://api-improve-production.up.railway.app/yt/download?url=${encodeURIComponent(videoUrl)}&format=mp3&quality=180`);
-      const downloadData = downloadResponse.data;
+      // Formater le message anonyme
+      const anonymousMessage = `Message anonyme de ${senderId} : ${message}`;
 
-      if (downloadData.message === "Audio downloaded successfully.") {
-        const audioUrl = downloadData.audio;
+      // Envoi du message à l'admin
+      await sendMessage(adminId, { text: anonymousMessage }, pageAccessToken);
 
-        // Étape 2: Envoyer le message vocal à l'utilisateur
-        await sendMessage(senderId, { attachment: { type: 'audio', payload: { url: audioUrl } } }, pageAccessToken);
-      } else {
-        await sendMessage(senderId, { text: "Une erreur s'est produite lors du téléchargement de l'audio." }, pageAccessToken);
-      }
+      // Confirmer à l'utilisateur que le message a bien été envoyé
+      await sendMessage(senderId, { text: 'Ton message a été envoyé à l\'admin en toute discrétion !' }, pageAccessToken);
     } catch (error) {
-      console.error('Error:', error);
-      await sendMessage(senderId, { text: 'Une erreur est survenue lors de la demande au service de téléchargement.' }, pageAccessToken);
+      console.error('Erreur lors de l\'envoi du message:', error);
+      await sendMessage(senderId, { text: 'Désolé, il y a eu une erreur lors de l\'envoi de ton message.' }, pageAccessToken);
     }
   }
 };
