@@ -16,32 +16,40 @@ const axiosPost = async (url, data, params = {}) => {
   }
 };
 
-// Affiche un indicateur "typing"
+// Indicateur de saisie
 const sendTypingIndicator = async (senderId, action, pageAccessToken) => {
   const params = { access_token: pageAccessToken };
   await axiosPost(MESSAGE_URL, { recipient: { id: senderId }, sender_action: action }, params);
 };
 
-// Envoi d'un message avec des boutons
+// Fonction d'envoi de message
 const sendMessage = async (
   senderId,
-  { text = '', buttons = null },
+  { text = '', buttons = null, attachment = null },
   pageAccessToken
 ) => {
   const params = { access_token: pageAccessToken };
 
   try {
-    // Affiche l'indicateur "typing"
+    // Activer l'indicateur "typing"
     await sendTypingIndicator(senderId, TYPING_ON, pageAccessToken);
 
-    // Vérifie si des boutons sont définis
+    let messagePayload;
+
+    // Validation et construction des boutons
     if (buttons) {
-      if (!Array.isArray(buttons) || buttons.length > 3) {
-        throw new Error('Buttons must be an array with a maximum of 3 elements.');
+      if (!Array.isArray(buttons)) {
+        throw new Error('Buttons must be an array.');
       }
 
-      // Construction du payload pour les boutons
-      const messagePayload = {
+      // Couper à 3 boutons maximum
+      if (buttons.length > 3) {
+        console.warn('Too many buttons; only the first 3 will be sent.');
+        buttons = buttons.slice(0, 3);
+      }
+
+      // Construction du payload des boutons
+      messagePayload = {
         recipient: { id: senderId },
         message: {
           attachment: {
@@ -54,19 +62,28 @@ const sendMessage = async (
           },
         },
       };
-
-      // Envoie le message avec les boutons
-      await axiosPost(MESSAGE_URL, messagePayload, params);
+    } else if (attachment) {
+      // Envoi d'une pièce jointe (image, audio, etc.)
+      messagePayload = {
+        recipient: { id: senderId },
+        message: {
+          attachment: attachment,
+        },
+      };
     } else if (text) {
-      // Si aucun bouton, envoie un message texte simple
-      const messagePayload = {
+      // Envoi d'un message texte simple
+      messagePayload = {
         recipient: { id: senderId },
         message: { text: text },
       };
-      await axiosPost(MESSAGE_URL, messagePayload, params);
+    } else {
+      throw new Error('No valid message content provided.');
     }
 
-    // Désactive l'indicateur "typing"
+    // Envoi du message
+    await axiosPost(MESSAGE_URL, messagePayload, params);
+
+    // Désactiver l'indicateur "typing"
     await sendTypingIndicator(senderId, TYPING_OFF, pageAccessToken);
   } catch (error) {
     const errorMessage = error.response?.data?.error?.message || error.message;
