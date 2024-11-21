@@ -1,4 +1,8 @@
 const { search, getLyricsByUrl } = require('tonokira');
+const fs = require('fs');
+const { sendMessage } = require('../handles/Tn');
+
+const token = fs.readFileSync('token.txt', 'utf8');
 
 module.exports = {
   name: 'tononkira',
