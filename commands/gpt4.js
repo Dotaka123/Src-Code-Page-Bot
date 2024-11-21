@@ -37,6 +37,7 @@ module.exports = {
     const mode = userPreferences[senderId] || 'fille';
     const characterPrompt = prompts[mode];
     const modifiedPrompt = `${input}, direct answer.`;
+    const senderId = id;
 
     try {
       // Message d'attente
@@ -44,7 +45,7 @@ module.exports = {
 
       // Requête API avec le prompt personnalisé pour GPT-4
       const response = await axios.get(
-        `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${senderId}`
+        `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${id}`
       );
       const data= response.data
       const messageText = data.response;
