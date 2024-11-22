@@ -1,13 +1,14 @@
 const axios = require('axios');
-const { sendMessage } = require('./sendMessage');
-const { setUserMode } = require('../commands/gpt4');
+const { sendMessage } = require('./sendMessage'); // Assurez-vous que ce chemin est correct
+const { setUserMode } = require('../commands/gpt4'); // Vérifiez également ce chemin
 
 const handlePostback = async (event, pageAccessToken) => {
   const { id: senderId } = event.sender || {};
   const { payload } = event.postback || {};
 
   if (!senderId || !payload) {
-    return console.error('Invalid postback event object');
+    console.error('Invalid postback event object');
+    return;
   }
 
   try {
@@ -49,19 +50,25 @@ const handlePostback = async (event, pageAccessToken) => {
       const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=128`;
 
       try {
-        sendMessage(senderId, { text: 'Telechargement de l\'audio en cours...' }, pageAccessToken);
+        await sendMessage(senderId, { text: 'Téléchargement de l\'audio en cours...' }, pageAccessToken);
+
         // Utiliser l'API pour télécharger l'audio en MP3
         const downloadResponse = await axios.get(downloadUrl);
-        const audioUrl = downloadResponse.data.audio;
+        
+        if (downloadResponse && downloadResponse.data && downloadResponse.data.audio) {
+          const audioUrl = downloadResponse.data.audio;
 
-        if (audioUrl) {
           // Envoyer le fichier audio à l'utilisateur
-          await sendMessage(senderId, {
-            attachment: {
-              type: 'audio',
-              payload: { url: audioUrl }
-            }
-          }, pageAccessToken);
+          await sendMessage(
+            senderId,
+            {
+              attachment: {
+                type: 'audio',
+                payload: { url: audioUrl }
+              }
+            },
+            pageAccessToken
+          );
         } else {
           await sendMessage(senderId, { text: 'Impossible de récupérer l\'audio.' }, pageAccessToken);
         }
@@ -77,7 +84,13 @@ const handlePostback = async (event, pageAccessToken) => {
     }
   } catch (error) {
     console.error('Error handling postback:', error.message);
-    await sendMessage(senderId, { text: 'Une erreur est survenue. Veuillez réessayer.' }, pageAccessToken);
+
+    // Vérifier si sendMessage est défini avant de l'utiliser
+    if (typeof sendMessage === 'function') {
+      await sendMessage(senderId, { text: 'Une erreur est survenue. Veuillez réessayer.' }, pageAccessToken);
+    } else {
+      console.error('sendMessage is not defined or is not a function.');
+    }
   }
 };
 
