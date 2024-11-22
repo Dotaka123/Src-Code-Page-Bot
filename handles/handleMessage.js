@@ -1,7 +1,7 @@
 const axios = require('axios');
-const { sendMessage } = require('./sendMessage');
-const { setUserMode } = require('../commands/gpt4');
-const { userDefaults } = require('./handlePostback'); // Importer la Map des utilisateurs et leurs modes
+const { sendMessage } = require('./sendMessage'); // Vérifiez le chemin du module
+const { setUserMode } = require('../commands/gpt4'); // Vérifiez également ce chemin
+const { userDefaults } = require('./handlePostback'); // Importer correctement la Map des utilisateurs
 
 const prefix = '-';
 const commands = new Map();
@@ -14,31 +14,31 @@ fs.readdirSync(path.join(__dirname, '../commands'))
   .forEach(file => {
     const command = require(`../commands/${file}`);
     commands.set(command.name.toLowerCase(), command);
-});
+  });
 
 // Fonction pour gérer les messages entrants
 async function handleMessage(event, pageAccessToken) {
   const senderId = event?.sender?.id;
-  if (!senderId) return console.error('Invalid event object');
+  if (!senderId) return console.error('Invalid event object: missing sender ID.');
 
   const messageText = event?.message?.text?.trim();
-  if (!messageText) return console.log('Received event without message text');
+  if (!messageText) return console.log('Received event without message text.');
 
   const [commandName, ...args] = messageText.startsWith(prefix)
     ? messageText.slice(prefix.length).split(' ')
     : messageText.split(' ');
 
   try {
-    // Si la commande "help" est appelée, afficher l'aide et les Quick Replies
+    // Gestion de la commande "help"
     if (commandName.toLowerCase() === 'help') {
       const commandsDir = path.join(__dirname, '../commands');
       const commandFiles = fs.readdirSync(commandsDir).filter(file => file.endsWith('.js'));
 
       if (args.length > 0) {
-        const commandName = args[0].toLowerCase();
+        const specificCommand = args[0].toLowerCase();
         const commandFile = commandFiles.find(file => {
           const command = require(path.join(commandsDir, file));
-          return command.name.toLowerCase() === commandName;
+          return command.name.toLowerCase() === specificCommand;
         });
 
         if (commandFile) {
@@ -49,15 +49,14 @@ async function handleMessage(event, pageAccessToken) {
 𝙳𝚎𝚜𝚌𝚛𝚒𝚙𝚝𝚒𝚘𝚗: ${command.description}
 𝚄𝚜𝚊𝚐𝚎: ${command.usage}
 ━━━━━━━━━━━━━━`;
-          
           await sendMessage(senderId, { text: commandDetails }, pageAccessToken);
         } else {
-          await sendMessage(senderId, { text: `Command "${commandName}" not found.` }, pageAccessToken);
+          await sendMessage(senderId, { text: `Commande "${specificCommand}" introuvable.` }, pageAccessToken);
         }
         return;
       }
 
-      const commands = commandFiles.map(file => {
+      const commandList = commandFiles.map(file => {
         const command = require(path.join(commandsDir, file));
         return `│ - ${command.name}`;
       });
@@ -66,10 +65,9 @@ async function handleMessage(event, pageAccessToken) {
 ━━━━━━━━━━━━━━
 𝙰𝚟𝚊𝚒𝚕𝚊𝚋𝚕𝚎 𝙲𝚘𝚖𝚖𝚊𝚗𝚍𝚜:
 ╭─╼━━━━━━━━╾─╮
-${commands.join('\n')}
+${commandList.join('\n')}
 ╰─━━━━━━━━━╾─╯
-Chat -help [name] 
-to see command details.
+Utilisez -help [nom] pour plus de détails.
 Admin: www.facebook.com/lahatra.gameur
 ━━━━━━━━━━━━━━`;
 
@@ -92,21 +90,25 @@ Admin: www.facebook.com/lahatra.gameur
 
       // Envoyer les Quick Replies
       await sendMessage(senderId, { text: 'Sélectionnez un mode pour continuer :', quick_replies: quickReplies }, pageAccessToken);
-
     } else {
       // Gestion des autres commandes
-      if (commands.has(commandName.toLowerCase())) {
-        await commands.get(commandName.toLowerCase()).execute(senderId, args, pageAccessToken, sendMessage);
+      const command = commands.get(commandName.toLowerCase());
+      if (command) {
+        await command.execute(senderId, args, pageAccessToken, sendMessage);
       } else {
-        // Commande par défaut en cas de commande non trouvée
-        const defaultMode = userDefaults.get(senderId) || 'gpt4'; // Si aucun mode sélectionné, utiliser 'gpt4' par défaut
-        const command = require(`../commands/${defaultMode}`);
-        await command.execute(senderId, [messageText], pageAccessToken, sendMessage);
+        // Commande par défaut
+        const defaultMode = userDefaults?.get(senderId) || 'gpt4'; // Utiliser "gpt4" si aucun mode n'est sélectionné
+        const defaultCommand = require(`../commands/${defaultMode}`);
+        await defaultCommand.execute(senderId, [messageText], pageAccessToken, sendMessage);
       }
     }
   } catch (error) {
-    console.error(`Error executing command:`, error);
-    await sendMessage(senderId, { text: error.message || 'There was an error executing that command.' }, pageAccessToken);
+    console.error('Error executing command:', error);
+    if (typeof sendMessage === 'function') {
+      await sendMessage(senderId, { text: error.message || 'Une erreur est survenue lors de l\'exécution de la commande.' }, pageAccessToken);
+    } else {
+      console.error('sendMessage is not a function or is undefined.');
+    }
   }
 }
 
