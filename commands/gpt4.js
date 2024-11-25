@@ -7,7 +7,7 @@ const fs = require('fs');
 
 const token = fs.readFileSync('token.txt', 'utf8');
 
-// Préférences des utilisateurs (mode fille ou garçon)
+// Préférences des utilisateurs (modes fille, garçon ou senku)
 const userPreferences = {};
 
 const prompts = {
@@ -25,7 +25,7 @@ const prompts = {
 
 module.exports = {
   name: 'gpt4',
-  description: 'Discuter avec Miora ou Nario',
+  description: 'Discuter avec Miora, Nario ou Senku',
   author: 'Tata',
   usage: 'gpt4 [ta question]',
 
@@ -35,20 +35,26 @@ module.exports = {
 
     // Définir le mode utilisateur (fille par défaut)
     const mode = userPreferences[senderId] || 'fille';
-    const characterPrompt = prompts[mode];
-    const modifiedPrompt = `${input}, direct answer.`;
-    
 
     try {
       // Message d'attente
       await sendMessage(senderId, { text: '😏💗...' }, pageAccessToken);
 
-      // Requête API avec le prompt personnalisé pour GPT-4
-      const response = await axios.get(
-        `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${encodeURIComponent(senderId)}`
-      );
-      const data= response.data
-      const messageText = data.response;
+      let messageText;
+
+      if (mode === 'senku') {
+        // Requête API pour le mode Senku
+        const senkuResponse = await axios.get(`https://kaiz-apis.gleeze.com/api/senku-ai?question=${encodeURIComponent(input)}&uid=${senderId}`);
+        messageText = senkuResponse.data.response;
+      } else {
+        // Requête API pour les modes fille/garçon
+        const characterPrompt = prompts[mode];
+        const modifiedPrompt = `${input}, direct answer.`;
+        const gptResponse = await axios.get(
+          `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${encodeURIComponent(senderId)}`
+        );
+        messageText = gptResponse.data.response;
+      }
 
       // Envoyer le message texte
       await sendMessage(senderId, { text: messageText }, pageAccessToken);
