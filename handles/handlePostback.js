@@ -26,6 +26,11 @@ const handlePostback = async (event, pageAccessToken) => {
           type: 'postback',
           title: 'Mode garçon 💙',
           payload: 'MODE_GARCON'
+        },
+        {
+          type: 'postback',
+          title: 'Mode Senku 🧠',
+          payload: 'MODE_SENKU'
         }
       ];
 
@@ -42,6 +47,12 @@ const handlePostback = async (event, pageAccessToken) => {
     else if (payload === 'MODE_GARCON') {
       setUserMode(senderId, 'garcon');
       await sendMessage(senderId, { text: 'Mode garçon activé ! 💙 Parlez avec Nario !' }, pageAccessToken);
+    }
+
+    // Gestion du mode Senku
+    else if (payload === 'MODE_SENKU') {
+      setUserMode(senderId, 'senku');
+      await sendMessage(senderId, { text: 'Mode Senku activé ! 🧠 Posez vos questions à Senku !' }, pageAccessToken);
     }
 
     // Gestion du postback "Écouter"
