@@ -1,82 +1,54 @@
 const axios = require('axios');
 const { sendMessage } = require('../handles/sendMessage');
+const fs = require('fs');
+const { Hercai } = require('hercai');
+
+const token = fs.readFileSync('token.txt', 'utf8');
+const herc = new Hercai();
 
 module.exports = {
-  name: 'courbe',
-  description: 'Generate a mathematical curve',
+  name: 'dall',
+  description: 'Générer une image avec DALL-E',
   author: 'Tata',
+  usage: 'dall [description de l\'image]',
 
   async execute(senderId, args) {
-    if (args.length === 0) {
-      return await sendMessage(senderId, {
-        text: 'Format incorrect. Utilisez : courbe <fonction>. Exemple : courbe y=x^2',
-      });
-    }
-
-    const equation = args.join(' '); // La fonction mathématique (ex: y=x^2)
-    const apiUrl = 'https://quickchart.io/chart';
-
-    // Configuration pour le graphique
-    const chartConfig = {
-      type: 'line',
-      data: {
-        datasets: [
-          {
-            label: `Graph: ${equation}`,
-            data: Array.from({ length: 100 }, (_, x) => {
-              x = (x - 50) / 10; // Centrer autour de 0 (-5 à 5)
-              try {
-                const y = eval(equation.replace('x', `(${x})`)); // Évalue y en fonction de x
-                return { x, y };
-              } catch {
-                return null;
-              }
-            }).filter((point) => point !== null),
-            borderColor: 'rgba(75, 192, 192, 1)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            fill: false,
-          },
-        ],
-      },
-      options: {
-        scales: {
-          x: { type: 'linear', position: 'bottom' },
-          y: { type: 'linear' },
-        },
-        plugins: {
-          title: {
-            display: true,
-            text: `Courbe de ${equation}`,
-          },
-        },
-      },
-    };
+    const pageAccessToken = token;
+    const input = (args.join(' ') || 'anime girl').trim();
+    const prompt = `${input}, realistic and detailed.`; // Description par défaut si aucun prompt n'est fourni
 
     try {
-      // Générer l'image du graphique avec QuickChart API
-      const response = await axios.post(apiUrl, {
-        chart: chartConfig,
-        width: 800,
-        height: 400,
-        format: 'png',
+      await sendMessage(senderId, { text: '🤔... Génération de l\'image...' }, pageAccessToken);
+
+      // Appel à l'API Hercai pour générer l'image
+      const response = await herc.drawImage({
+        model: 'v3', // Modèle DALL-E
+        prompt: prompt,
+        negative_prompt: ''  // Exclusion facultative
       });
 
-      const imageUrl = response.data.url;
+      if (response && response.url) {
+        const imageUrl = response.url;
 
-      // Envoyer l'image générée au bot
-      await sendMessage(senderId, {
-        attachment: {
-          type: 'image',
-          payload: {
-            url: imageUrl,
-          },
-        },
-      });
+        // Envoi de l'image directement
+        await sendMessage(senderId, {
+          attachment: {
+            type: 'image',
+            payload: {
+              url: imageUrl,
+              is_reusable: true  // Permet de réutiliser l'image
+            }
+          }
+        }, pageAccessToken);
+        
+        // Message supplémentaire
+        await sendMessage(senderId, { text: 'Voici l\'image générée pour votre demande.' }, pageAccessToken);
+      } else {
+        await sendMessage(senderId, { text: 'Désolé, une erreur est survenue lors de la génération de l\'image.' }, pageAccessToken);
+      }
     } catch (error) {
-      console.error('Erreur lors de la génération de la courbe:', error);
-      await sendMessage(senderId, {
-        text: 'Erreur lors de la génération de la courbe. Veuillez vérifier votre fonction.',
-      });
+      console.error('Error:', error);
+      await sendMessage(senderId, { text: 'Erreur : une erreur inattendue est survenue.' }, pageAccessToken);
     }
-  },
+  }
 };
