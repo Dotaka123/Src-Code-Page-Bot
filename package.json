@@ -23,7 +23,8 @@
     "weathers-watch": "*",
     "cheerio": "*",
     "tonokira": "*",
-    "matplotlib": "*"
+    "matplotlib": "*",
+    "@rejax/browser-ai": "*"
   },
   "engines": {
     "node": "20.x"
