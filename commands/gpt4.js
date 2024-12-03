@@ -51,7 +51,7 @@ module.exports = {
         const characterPrompt = prompts[mode];
         const modifiedPrompt = `${input}, direct answer.`;
         const gptResponse = await axios.get(
-          `https://kaiz-apis.gleeze.com/api/gemini-pro?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}`
+          `https://playground.y2pheq.me/gpt4?prompt=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}`
         );
         messageText = gptResponse.data.response;
       }
