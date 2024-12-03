@@ -24,7 +24,8 @@
     "cheerio": "*",
     "tonokira": "*",
     "matplotlib": "*",
-    "@rejax/browser-ai": "*"
+    "@rejax/browser-ai": "*",
+    "@ruingl/gptx": "*",
   },
   "engines": {
     "node": "20.x"
