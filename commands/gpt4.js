@@ -51,7 +51,7 @@ module.exports = {
         const characterPrompt = prompts[mode];
         const modifiedPrompt = `${input}, direct answer.`;
         const gptResponse = await axios.get(
-          `https://ccprojectapis.ddns.net/api/gpt4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&id=${encodeURIComponent(senderId)}`
+          `https://kaiz-apis.gleeze.com/api/gemini-pro?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}`
         );
         messageText = gptResponse.data.response;
       }
