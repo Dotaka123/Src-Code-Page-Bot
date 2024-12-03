@@ -53,7 +53,7 @@ module.exports = {
         const gptResponse = await axios.get(
           `https://playground.y2pheq.me/gpt4?prompt=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}`
         );
-        messageText = gptResponse.data.response;
+        messageText = gptResponse.data.result;
       }
 
       // Envoyer le message texte
