@@ -51,9 +51,10 @@ module.exports = {
         const characterPrompt = prompts[mode];
         const modifiedPrompt = `${input}, direct answer.`;
         const gptResponse = await axios.get(
-          `https://playground.y2pheq.me/gpt4?prompt=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}`
+          `https://kaiz-apis.gleeze.com/api/gpt-4o?q=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}`
         );
-        messageText = gptResponse.data.result;
+        messageText = gptResponse.data.response
+    ;
       }
 
       // Envoyer le message texte
