@@ -1,4 +1,5 @@
-const fetch = require('node-fetch');
+const qs = require('querystring');
+const http = require('https');
 const { sendMessage } = require('../handles/sendMessage');
 const fs = require('fs');
 
@@ -20,38 +21,46 @@ module.exports = {
 
     const artist = args[0];
     const title = args.slice(1).join('-');
+    const url = `https://tononkira.serasera.org/hira/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`;
 
-    const encodedParams = new URLSearchParams();
-    encodedParams.set('url', `https://tononkira.serasera.org/hira/${encodeURIComponent(artist)}/${encodeURIComponent(title)}`);
-
-    const url = 'https://tononkira-tononkalo-ohabolana-malagasy.p.rapidapi.com/infos_two_hira';
     const options = {
       method: 'POST',
+      hostname: 'tononkira-tononkalo-ohabolana-malagasy.p.rapidapi.com',
+      path: '/infos_two_hira',
       headers: {
         'x-rapidapi-key': 'bf6b729bbdmshb9d8e92ca0fc1cep191fbfjsn71acd0cb1e97',
         'x-rapidapi-host': 'tononkira-tononkalo-ohabolana-malagasy.p.rapidapi.com',
         'Content-Type': 'application/x-www-form-urlencoded'
-      },
-      body: encodedParams
+      }
     };
 
-    try {
-      await sendMessage(senderId, { text: '🔍 Recherche en cours...' }, pageAccessToken);
+    const req = http.request(options, (res) => {
+      const chunks = [];
 
-      const response = await fetch(url, options);
-      const result = await response.json();
+      res.on('data', (chunk) => {
+        chunks.push(chunk);
+      });
 
-      if (result && result.lyrics && result.lyrics.length > 0) {
-        const formattedLyrics = result.lyrics.join('\n');
-        const formattedMessage = `🎶 **Titre** : ${result.title}\n👤 **Artiste** : ${result.artist}\n\n📜 **Paroles** :\n${formattedLyrics}`;
+      res.on('end', async () => {
+        const body = Buffer.concat(chunks);
+        const result = JSON.parse(body.toString());
 
-        await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
-      } else {
-        await sendMessage(senderId, { text: '❌ Paroles introuvables pour cette chanson.' }, pageAccessToken);
-      }
-    } catch (error) {
+        if (result && result.lyrics && result.lyrics.length > 0) {
+          const formattedLyrics = result.lyrics.join('\n');
+          const formattedMessage = `🎶 **Titre** : ${result.title}\n👤 **Artiste** : ${result.artist}\n\n📜 **Paroles** :\n${formattedLyrics}`;
+          await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
+        } else {
+          await sendMessage(senderId, { text: '❌ Paroles introuvables pour cette chanson.' }, pageAccessToken);
+        }
+      });
+    });
+
+    req.on('error', (error) => {
       console.error('Error:', error);
-      await sendMessage(senderId, { text: '❌ Une erreur s\'est produite lors de la recherche des paroles.' }, pageAccessToken);
-    }
+      sendMessage(senderId, { text: '❌ Une erreur s\'est produite lors de la recherche des paroles.' }, pageAccessToken);
+    });
+
+    req.write(qs.stringify({ url }));
+    req.end();
   }
 };
