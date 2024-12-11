@@ -25,7 +25,7 @@
     "tonokira": "*",
     "matplotlib": "*",
     "@rejax/browser-ai": "*",
-    "@ruingl/gptx": "*"
+    "node-fetch": "*"
   },
   "engines": {
     "node": "20.x"
