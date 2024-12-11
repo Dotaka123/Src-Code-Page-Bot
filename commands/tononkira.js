@@ -46,9 +46,17 @@ module.exports = {
         const result = JSON.parse(body.toString());
 
         if (result && result.lyrics && result.lyrics.length > 0) {
-          const formattedLyrics = result.lyrics.join('\n');
-          const formattedMessage = `🎶 **Titre** : ${result.title}\n👤 **Artiste** : ${result.artist}\n\n📜 **Paroles** :\n${formattedLyrics}`;
-          await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
+          let formattedLyrics = result.lyrics.join('\n');
+          const maxLength = 2000; // Limite de caractères par message
+
+          // Diviser le message en plusieurs si nécessaire
+          let start = 0;
+          while (start < formattedLyrics.length) {
+            let end = start + maxLength;
+            const messagePart = formattedLyrics.slice(start, end);
+            await sendMessage(senderId, { text: messagePart }, pageAccessToken);
+            start = end;
+          }
         } else {
           await sendMessage(senderId, { text: '❌ Paroles introuvables pour cette chanson.' }, pageAccessToken);
         }
