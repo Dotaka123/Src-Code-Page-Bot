@@ -25,7 +25,8 @@
     "tonokira": "*",
     "matplotlib": "*",
     "@rejax/browser-ai": "*",
-    "node-fetch": "*"
+    "https": "*",
+    "querystring": "*"
   },
   "engines": {
     "node": "20.x"
