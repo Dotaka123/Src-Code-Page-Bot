@@ -19,7 +19,7 @@ module.exports = {
       await sendMessage(senderId, { text: '🤔...' }, pageAccessToken);
       const response = await axios.get(`https://kaiz-apis.gleeze.com/api/ministral-8b?q=${encodeURIComponent(modifiedPrompt)}&uid=${senderId}`);
       const data = response.data;
-      const formattedMessage = `・──🧠Ministral-8b🧠──・\n${data.content}\n・──── >ᴗ< ────・`;
+      const formattedMessage = `・-🧠Ministral-8b🧠-・\n${data.content}\n・─ >ᴗ< ─・`;
       await sendMessage(senderId, { text: 'Admin: www.facebook.com/lahatra.gameur' }, pageAccessToken);
       await sendMessage(senderId, { text: formattedMessage }, pageAccessToken);
     } catch (error) {
