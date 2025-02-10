@@ -44,7 +44,7 @@ module.exports = {
 
       if (mode === 'senku') {
         // Requête API pour le mode Senku
-        const senkuResponse = await axios.get(`https://kaiz-apis.gleeze.com/api/senku-ai?question=${encodeURIComponent(input)}&uid=${senderId}`);
+        const senkuResponse = await axios.get(`https://kaiz-apis.gleeze.com/api/gpt-4o?ask=${encodeURIComponent(input)}&uid=${senderId}&webSearch=off`);
         messageText = senkuResponse.data.response;
       } else {
         // Requête API pour les modes fille/garçon
