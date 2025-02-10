@@ -29,7 +29,7 @@ const handlePostback = async (event, pageAccessToken) => {
         },
         {
           type: 'postback',
-          title: 'Mode Senku 🧠',
+          title: 'Mode normal 🧠',
           payload: 'MODE_SENKU'
         }
       ];
@@ -52,7 +52,7 @@ const handlePostback = async (event, pageAccessToken) => {
     // Gestion du mode Senku
     else if (payload === 'MODE_SENKU') {
       setUserMode(senderId, 'senku');
-      await sendMessage(senderId, { text: 'Mode Senku activé ! 🧠 Posez vos questions à Senku !' }, pageAccessToken);
+      await sendMessage(senderId, { text: 'Mode normal activé ! 🧠 Posez vos questions à GPT-4o !' }, pageAccessToken);
     }
 
     // Gestion du postback "Écouter"
