@@ -40,16 +40,15 @@ module.exports = {
       
       // Appel à la nouvelle API pour générer l'image
       const apiUrl = `https://kaiz-apis.gleeze.com/api/imagine?prompt=${encodeURIComponent(prompt)}`;
-      const response = await axios.get(apiUrl);
-      const imageUrl = response.data; // La réponse est directement l'URL de l'image
+      const response = await axios.get(apiUrl, { responseType: 'arraybuffer' }); // Récupérer l'image comme un buffer
 
-      if (imageUrl) {
-        await sendMessage(senderId, {
-          attachment: { type: 'image', payload: { url: imageUrl } }
-        }, pageAccessToken);
-      } else {
-        await sendMessage(senderId, { text: `Failed to generate image. Please try a different prompt.` }, pageAccessToken);
-      }
+      // Convertir le buffer en base64
+      const imageBuffer = Buffer.from(response.data, 'binary').toString('base64');
+      const imageUrl = `data:image/jpg;base64,${imageBuffer}`; // Créer une URL de données
+
+      await sendMessage(senderId, {
+        attachment: { type: 'image', payload: { url: imageUrl } }
+      }, pageAccessToken);
 
     } catch (error) {
       console.error('Error:', error);
