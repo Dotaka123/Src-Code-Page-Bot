@@ -26,7 +26,8 @@
     "matplotlib": "*",
     "@rejax/browser-ai": "*",
     "https": "*",
-    "querystring": "*"
+    "querystring": "*",
+    "youtube-downloader-cc-api": "*"
   },
   "engines": {
     "node": "20.x"
