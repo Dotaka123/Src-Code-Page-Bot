@@ -12,7 +12,7 @@ module.exports = {
   name: 'imagine',
   description: 'Generate an AI-based image with a 2-minute cooldown',
   author: 'Tata',
-  usage:'imagine dog',
+  usage: 'imagine dog',
 
   async execute(senderId, args) {
     const pageAccessToken = token;
@@ -36,15 +36,12 @@ module.exports = {
     lastUsage[senderId] = currentTime;
 
     try {
-      sendMessage(senderId, { text: 'Generation de l image en cours...🤩' }, pageAccessToken);
-      // Appel à l'API pour générer l'image
-      const apiUrl = `https://ccprojectapis.ddns.net/api/blackbox/gen?prompt=${encodeURIComponent(prompt)}`;
+      await sendMessage(senderId, { text: 'Generation de l image en cours...🤩' }, pageAccessToken);
+      
+      // Appel à la nouvelle API pour générer l'image
+      const apiUrl = `https://kaiz-apis.gleeze.com/api/imagine?prompt=${encodeURIComponent(prompt)}`;
       const response = await axios.get(apiUrl);
-      const data = response.data;
-
-      // Extraire l'URL de l'image de la réponse
-      const imageUrlMatch = data.response.match(/\((https:\/\/[^\)]+)\)/);
-      const imageUrl = imageUrlMatch ? imageUrlMatch[1] : null;
+      const imageUrl = response.data; // La réponse est directement l'URL de l'image
 
       if (imageUrl) {
         await sendMessage(senderId, {
