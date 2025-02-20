@@ -1,6 +1,7 @@
 const axios = require('axios');
 const { sendMessage } = require('./sendMessage'); // Assurez-vous que ce chemin est correct
 const { setUserMode } = require('../commands/gpt4'); // Vérifiez également ce chemin
+const { getDownloadDetails } = require('youtube-downloader-cc-api');
 
 const handlePostback = async (event, pageAccessToken) => {
   const { id: senderId } = event.sender || {};
@@ -58,16 +59,16 @@ const handlePostback = async (event, pageAccessToken) => {
     // Gestion du postback "Écouter"
     else if (payload.startsWith('LISTEN_AUDIO_')) {
       const videoId = payload.split('_')[2];
-      const downloadUrl = `https://api-improve-production.up.railway.app/yt/download?url=https://www.youtube.com/watch?v=${videoId}&format=mp3&quality=128`;
+      const videoUrl = `https://www.youtube.com/watch?v=${videoId}`;
 
       try {
         await sendMessage(senderId, { text: 'Téléchargement de l\'audio en cours...' }, pageAccessToken);
 
-        // Utiliser l'API pour télécharger l'audio en MP3
-        const downloadResponse = await axios.get(downloadUrl);
-        
-        if (downloadResponse && downloadResponse.data && downloadResponse.data.audio) {
-          const audioUrl = downloadResponse.data.audio;
+        // Utilisation de youtube-downloader-cc-api
+        const response = await getDownloadDetails(videoUrl, 'mp3');
+
+        if (response && response.download) {
+          const audioUrl = response.download;
 
           // Envoyer le fichier audio à l'utilisateur
           await sendMessage(
