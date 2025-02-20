@@ -27,7 +27,7 @@
     "@rejax/browser-ai": "*",
     "https": "*",
     "querystring": "*",
-    "youtube-downloader-cc-api": "*"
+    "s-ytdl": "*"
   },
   "engines": {
     "node": "20.x"
