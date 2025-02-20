@@ -1,7 +1,7 @@
 const axios = require('axios');
 const { sendMessage } = require('./sendMessage'); // Assurez-vous que ce chemin est correct
 const { setUserMode } = require('../commands/gpt4'); // Vérifiez également ce chemin
-const { getDownloadDetails } = require('youtube-downloader-cc-api');
+const SYTDL = require('s-ytdl'); // Utilisation de require au lieu de import
 
 const handlePostback = async (event, pageAccessToken) => {
   const { id: senderId } = event.sender || {};
@@ -64,11 +64,11 @@ const handlePostback = async (event, pageAccessToken) => {
       try {
         await sendMessage(senderId, { text: 'Téléchargement de l\'audio en cours...' }, pageAccessToken);
 
-        // Utilisation de youtube-downloader-cc-api
-        const response = await getDownloadDetails(videoUrl, 'mp3');
+        // Utilisation de s-ytdl pour télécharger l'audio
+        const audio = await SYTDL.dl(videoUrl, '4', 'audio'); // Qualité 192kbps
 
-        if (response && response.download) {
-          const audioUrl = response.download;
+        if (audio && audio.url) {
+          const audioUrl = audio.url;
 
           // Envoyer le fichier audio à l'utilisateur
           await sendMessage(
