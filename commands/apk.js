@@ -1,60 +1,37 @@
 const axios = require('axios');
-const cheerio = require('cheerio');
+const fs = require('fs');
 const { sendMessage } = require('../handles/sendMessage');
 
+const token = fs.readFileSync('token.txt', 'utf8');
+
 module.exports = {
-  name: 'apk',
-  description: 'Recherche une application Android sur APKPure',
+  name: 'phi',
+  description: 'Discuter avec Phi-2 (AI)',
   author: 'Tata',
+  usage: 'phi [ta question]',
 
   async execute(senderId, args) {
-    const query = args.join(' ');
-    const pageAccessToken = require('fs').readFileSync('token.txt', 'utf8');
-
-    if (!query) {
-      return sendMessage(senderId, { text: '❗ Entrez le nom de l\'application à rechercher.' }, pageAccessToken);
-    }
+    const pageAccessToken = token;
+    const input = (args.join(' ') || 'hey').trim();
+    const encodedInput = encodeURIComponent(input);
 
     try {
-      const res = await axios.get(`https://apkpure.com/fr/search?q=${encodeURIComponent(query)}`, {
-  headers: {
-    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
-  }
-});
-      const $ = cheerio.load(res.data);
-      const results = [];
+      // Message d'attente
+      await sendMessage(senderId, { text: '🤖 Réflexion en cours...' }, pageAccessToken);
 
-      $('.search-dl .search-title a').each((i, el) => {
-        const title = $(el).text().trim();
-        const link = 'https://apkpure.com' + $(el).attr('href');
-        const img = $(el).closest('.search-dl').find('img').attr('src');
+      const response = await axios.get(`https://api.zetsu.xyz/ai/phi-2?q=${encodedInput}&uid=${senderId}`);
+      const data = response.data;
 
-        if (title && link) {
-          results.push({ title, link, img });
-        }
-      });
-
-      if (results.length === 0) {
-        return sendMessage(senderId, { text: '❌ Aucune application trouvée.' }, pageAccessToken);
+      if (data.status && data.result) {
+        const message = `・────🤖 Phi-2────・\n${data.result.trim()}\n・──────────────・`;
+        await sendMessage(senderId, { text: message }, pageAccessToken);
+      } else {
+        await sendMessage(senderId, { text: 'La réponse est vide ou invalide.' }, pageAccessToken);
       }
 
-      const app = results[0];
-
-      await sendMessage(senderId, {
-        text: `📱 *${app.title}*`,
-        image: app.img,
-        buttons: [
-          {
-            type: 'postback',
-            title: '📥 Télécharger',
-            payload: `DOWNLOAD_APK|${app.link}`
-          }
-        ]
-      }, pageAccessToken);
-
     } catch (error) {
-      console.error('Erreur lors de la recherche APK:', error.message);
-      await sendMessage(senderId, { text: '❌ Erreur lors de la recherche de l\'application.' }, pageAccessToken);
+      console.error('Erreur Phi:', error.message);
+      await sendMessage(senderId, { text: 'Erreur lors de la communication avec Phi-2.' }, pageAccessToken);
     }
   }
 };
