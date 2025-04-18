@@ -16,7 +16,11 @@ module.exports = {
     }
 
     try {
-      const res = await axios.get(`https://apkpure.com/fr/search?q=${encodeURIComponent(query)}`);
+      const res = await axios.get(`https://apkpure.com/fr/search?q=${encodeURIComponent(query)}`, {
+  headers: {
+    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36'
+  }
+});
       const $ = cheerio.load(res.data);
       const results = [];
 
