@@ -51,7 +51,7 @@ module.exports = {
         const characterPrompt = prompts[mode];
         const modifiedPrompt = `${input}, direct answer.`;
         const gptResponse = await axios.get(
-          `https://jonell01-ccprojectsapihshs.hf.space/api/gpt4?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}id=${encodeURIComponent(senderId)}`
+          `https://jonell01-ccprojectsapihshs.hf.space/api/gpt4?ask=ask=${encodeURIComponent(characterPrompt + ' ' + modifiedPrompt)}&id=${encodeURIComponent(senderId)}`
         );
         messageText = gptResponse.data
     ;
