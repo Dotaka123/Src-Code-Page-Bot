@@ -44,16 +44,16 @@ module.exports = {
 
       if (mode === 'senku') {
         // Requête API pour le mode Senku
-        const senkuResponse = await axios.get(`https://kaiz-apis.gleeze.com/api/gpt-4o?ask=${encodeURIComponent(input)}&uid=${senderId}&webSearch=off`);
-        messageText = senkuResponse.data.response;
+        const senkuResponse = await axios.get(`https://jonell01-ccprojectsapihshs.hf.space/api/gpt4?ask=${encodeURIComponent(input)}&id=${senderId}`);
+        messageText = senkuResponse.data;
       } else {
         // Requête API pour les modes fille/garçon
         const characterPrompt = prompts[mode];
         const modifiedPrompt = `${input}, direct answer.`;
         const gptResponse = await axios.get(
-          `https://kaiz-apis.gleeze.com/api/gpt-4o?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}&uid=${encodeURIComponent(senderId)}&webSearch=off`
+          `https://jonell01-ccprojectsapihshs.hf.space/api/gpt4?ask=${encodeURIComponent(characterPrompt)}_${encodeURIComponent(modifiedPrompt)}id=${encodeURIComponent(senderId)}`
         );
-        messageText = gptResponse.data.response
+        messageText = gptResponse.data
     ;
       }
 
