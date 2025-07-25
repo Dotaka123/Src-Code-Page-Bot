@@ -51,7 +51,7 @@ module.exports = {
         const characterPrompt = prompts[mode];
         const modifiedPrompt = `${input}, direct answer.`;
         const gptResponse = await axios.get(
-          `https://kaiz-apis.gleeze.com/api/gpt-4o?ask=${encodeURIComponent(characterPrompt + ' ' + modifiedPrompt)}&uid=${encodeURIComponent(senderId)}&webSearch=off&apikey=f51ff2be-342c-4c5d-afce-b1bfe52f7fe6&webSearch=off`
+          `https://kaiz-apis.gleeze.com/api/gpt-4o?ask=${encodeURIComponent(characterPrompt + ' ' + modifiedPrompt)}&uid=${encodeURIComponent(senderId)}&webSearch=off&apikey=f51ff2be-342c-4c5d-afce-b1bfe52f7fe6`
         );
         messageText = gptResponse.data.response
     ;
